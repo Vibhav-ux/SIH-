@@ -1,6 +1,6 @@
 const { v4: uuidv4 } = require('uuid');
 const auditLedger = require('../services/auditLedger');
-const neonPersist = require('./neonPersist');
+const supabasePersist = require('./supabasePersist');
 
 // ─── In-Memory Data Store ─────────────────────────────────────────────────────
 const store = {
@@ -31,7 +31,7 @@ function query(table, predicate) {
   return Object.values(store[table] || {}).filter(predicate);
 }
 
-// ─── Audited Write (memory + async Neon persist) ──────────────────────────────
+// ─── Audited Write (memory + async Supabase persist) ────────────────────
 function write(table, id, data, actor = 'system', action = 'WRITE') {
   const record = { ...data, id: id || uuidv4(), updatedAt: new Date().toISOString() };
   if (!store[table]) store[table] = {};
@@ -39,10 +39,10 @@ function write(table, id, data, actor = 'system', action = 'WRITE') {
 
   // Persist to audit log
   auditLedger.append({ table, id: record.id, action, actor, payload: record });
-  neonPersist.appendAudit({ table, id: record.id, action, actor, payload: record });
+  supabasePersist.appendAudit({ table, id: record.id, action, actor, payload: record });
 
-  // Persist to Neon asynchronously (fire-and-forget)
-  neonPersist.saveRecord(table, record.id, record);
+  // Persist to Supabase asynchronously (fire-and-forget)
+  supabasePersist.saveRecord(table, record.id, record);
 
   return record;
 }
@@ -53,8 +53,8 @@ function seed(table, id, data) {
   const record = { ...data, id };
   store[table][id] = record;
 
-  // Also persist to Neon silently
-  neonPersist.saveRecord(table, id, record);
+  // Also persist to Supabase silently
+  supabasePersist.saveRecord(table, id, record);
 
   return record;
 }
@@ -63,7 +63,7 @@ function seed(table, id, data) {
 function remove(table, id, actor = 'system') {
   if (store[table] && store[table][id]) {
     auditLedger.append({ table, id, action: 'DELETE', actor, payload: null });
-    neonPersist.deleteRecord(table, id);
+    supabasePersist.deleteRecord(table, id);
     delete store[table][id];
     return true;
   }

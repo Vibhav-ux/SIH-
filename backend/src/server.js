@@ -1,6 +1,6 @@
 const express = require('express');
 const cors = require('cors');
-const neonPersist = require('./store/neonPersist');
+const supabasePersist = require('./store/supabasePersist');
 const db = require('./store/db');
 const { seedAll } = require('./data/seed');
 
@@ -19,12 +19,12 @@ const PORT = process.env.PORT || 3001;
 app.use(cors({ origin: '*' }));
 app.use(express.json({ limit: '10mb' }));
 
-// ─── Startup: Create tables, load from Neon, seed if empty ───────────────────
+// ─── Startup: Create tables, load from Supabase, seed if empty ──────────────
 async function startup() {
   try {
-    await neonPersist.createTables();
-    const loaded = await neonPersist.loadAll(db.store);
-    console.log(`[Server] Loaded ${loaded} records from Neon`);
+    await supabasePersist.createTables();
+    const loaded = await supabasePersist.loadAll(db.store);
+    console.log(`[Server] Loaded ${loaded} records from Supabase`);
     // Always run seedAll — it only seeds data that is missing (isSeeded check)
     // This ensures agencies, proposals, complaints are always available
     seedAll();
@@ -63,7 +63,7 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Internal server error', message: err.message });
 });
 
-// Start server after loading data from Neon
+// Start server after loading data from Supabase
 startup().then(() => {
   app.listen(PORT, () => {
     console.log(`\n🚀 MPLAD Sentinel API running on http://localhost:${PORT}`);

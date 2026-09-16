@@ -1,0 +1,193 @@
+// Supabase Persistence Layer — Drop-in replacement for neonPersist.js
+// Same function signatures — everything else in the codebase stays unchanged.
+require('dotenv').config({ path: '.env.local' });
+const { createClient } = require('@supabase/supabase-js');
+
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_KEY
+);
+
+// ─── Table → store key mapping ───────────────────────────────────────────────
+const TABLE_MAP = {
+  agencies:          'store_agencies',
+  projects:          'store_projects',
+  proposals:         'store_proposals',
+  complaints:        'store_complaints',
+  progressUpdates:   'store_progress_updates',
+  communityReports:  'store_community_reports',
+  externalSchemes:   'store_external_schemes',
+};
+
+// ─── Create all tables via Supabase RPC (runs raw SQL) ───────────────────────
+// Supabase doesn't support direct DDL from the client — tables must be created
+// via the Supabase Dashboard SQL editor or via migrations.
+// This function is kept for API compatibility but is a no-op in Supabase.
+async function createTables() {
+  console.log('[Supabase] Using Supabase as persistence layer. Tables must be created via Supabase Dashboard.');
+  return true;
+}
+
+// ─── Load all data from Supabase into the in-memory store ────────────────────
+async function loadAll(store) {
+  let totalLoaded = 0;
+
+  // Load all generic store tables in parallel for max speed
+  const loadPromises = Object.entries(TABLE_MAP).map(async ([storeKey, supabaseTable]) => {
+    try {
+      const { data, error } = await supabase
+        .from(supabaseTable)
+        .select('id, data');
+
+      if (error) {
+        console.warn(`[Supabase] Could not load ${supabaseTable}: ${error.message}`);
+        if (!store[storeKey]) store[storeKey] = {};
+        return 0;
+      }
+
+      if (!store[storeKey]) store[storeKey] = {};
+      let count = 0;
+      for (const row of (data || [])) {
+        store[storeKey][row.id] = { ...row.data, id: row.id };
+        count++;
+      }
+      return count;
+    } catch (err) {
+      console.warn(`[Supabase] Load error for ${supabaseTable}:`, err.message);
+      return 0;
+    }
+  });
+
+  const counts = await Promise.all(loadPromises);
+  totalLoaded += counts.reduce((a, b) => a + b, 0);
+
+  // Load MPs from the typed mps table
+  try {
+    const { data: mpsData, error: mpsError } = await supabase
+      .from('mps')
+      .select('*');
+
+    if (mpsError) {
+      console.warn('[Supabase] Could not load mps:', mpsError.message);
+    } else {
+      if (!store.mps) store.mps = {};
+      for (const row of (mpsData || [])) {
+        store.mps[row.id] = {
+          id: row.id,
+          name: row.mp_name || row.name,
+          constituency: row.constituency,
+          state: row.state,
+          party: row.party,
+          house: row.house,
+          totalFunds: Number(row.allocated_amount || row.total_funds) || 0,
+          usedFunds: Number(row.total_expenditure || row.used_funds) || 0,
+          utilizationPercentage: Number(row.utilization_percentage) || 0,
+          completedWorksCount: Number(row.completed_works_count) || 0,
+          recommendedWorksCount: Number(row.recommended_works_count) || 0,
+          completionRate: Number(row.completion_rate) || 0,
+          unspentAmount: Number(row.unspent_amount) || 0,
+          riskScore: Number(row.risk_score) || 0,
+          email: row.email || '',
+          phone: row.phone || '',
+          type: row.house || row.type || 'Lok Sabha',
+        };
+        totalLoaded++;
+      }
+    }
+  } catch (err) {
+    console.warn('[Supabase] MPs load error:', err.message);
+  }
+
+  console.log(`[Supabase] Loaded ${totalLoaded} records into memory`);
+  return totalLoaded;
+}
+
+// ─── Persist a record to Supabase (fire-and-forget) ──────────────────────────
+async function saveRecord(storeKey, id, data) {
+  if (storeKey === 'mps') {
+    // MPs use the typed mps table
+    const { error } = await supabase
+      .from('mps')
+      .upsert({
+        id: data.id,
+        mp_name: data.name,
+        constituency: data.constituency,
+        state: data.state,
+        party: data.party,
+        house: data.type || data.house,
+        allocated_amount: data.totalFunds,
+        total_expenditure: data.usedFunds,
+      }, { onConflict: 'id' });
+
+    if (error) console.error('[Supabase] MP save error:', error.message);
+    return;
+  }
+
+  const supabaseTable = TABLE_MAP[storeKey];
+  if (!supabaseTable) return;
+
+  const record = {
+    id,
+    data: JSON.stringify(data),
+    updated_at: new Date().toISOString(),
+  };
+
+  // Add helper columns for FK-style querying
+  if (data.mpId)      record.mp_id = data.mpId;
+  if (data.projectId) record.project_id = data.projectId;
+
+  supabase
+    .from(supabaseTable)
+    .upsert(record, { onConflict: 'id' })
+    .then(({ error }) => {
+      if (error) console.error(`[Supabase] Save error (${storeKey}/${id}):`, error.message);
+    });
+}
+
+// ─── Delete a record from Supabase ───────────────────────────────────────────
+function deleteRecord(storeKey, id) {
+  const supabaseTable = TABLE_MAP[storeKey];
+  if (!supabaseTable) return;
+
+  supabase
+    .from(supabaseTable)
+    .delete()
+    .eq('id', id)
+    .then(({ error }) => {
+      if (error) console.error(`[Supabase] Delete error (${storeKey}/${id}):`, error.message);
+    });
+}
+
+// ─── Append to audit ledger ───────────────────────────────────────────────────
+function appendAudit(entry) {
+  supabase
+    .from('audit_ledger')
+    .insert({
+      table_name: entry.table,
+      record_id: entry.id,
+      action: entry.action,
+      actor: entry.actor,
+      payload: entry.payload,
+    })
+    .then(({ error }) => {
+      if (error) console.error('[Supabase] Audit error:', error.message);
+    });
+}
+
+// ─── Count total records (to check if DB is empty) ───────────────────────────
+async function getTotalRecords() {
+  let total = 0;
+  for (const supabaseTable of Object.values(TABLE_MAP)) {
+    try {
+      const { count, error } = await supabase
+        .from(supabaseTable)
+        .select('id', { count: 'exact', head: true });
+      if (!error) total += count || 0;
+    } catch (err) {
+      // Table may not exist yet, skip
+    }
+  }
+  return total;
+}
+
+module.exports = { createTables, loadAll, saveRecord, deleteRecord, appendAudit, getTotalRecords, supabase };
