@@ -209,6 +209,8 @@ export default function MPDirectory() {
     localStorage.setItem('mplad_mp_id', mp.id);
     localStorage.setItem('mplad_mp_name', mp.name);
     localStorage.setItem('mplad_mp_state', mp.state);
+    // Dispatch event so MPDashboard (same tab) picks up the change immediately
+    window.dispatchEvent(new Event('storage'));
     navigate('/app/mp');
   };
 

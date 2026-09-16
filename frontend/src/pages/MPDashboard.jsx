@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
-import { mpApi, aiApi, formatCurrency, formatDate } from '../api';
+import { mpApi, formatCurrency, formatDate } from '../api';
 import StatCard from '../components/StatCard';
 import ProjectCard from '../components/ProjectCard';
-import RiskBadge from '../components/RiskBadge';
 
-export default function MPDashboard({ mpId = 'mp-001' }) {
+export default function MPDashboard() {
+  // Always read directly from localStorage so navigating from MPDirectory always shows the right MP
+  const [mpId, setMpId] = useState(() => localStorage.getItem('mplad_mp_id') || 'mp-001');
   const [overview, setOverview] = useState(null);
   const [projects, setProjects] = useState([]);
   const [proposals, setProposals] = useState([]);
@@ -15,6 +16,22 @@ export default function MPDashboard({ mpId = 'mp-001' }) {
   const [propForm, setPropForm] = useState({ title: '', category: 'ROADS', estimatedBudget: '', description: '', lat: '', lng: '' });
   const [submitting, setSubmitting] = useState(false);
   const [propSuccess, setPropSuccess] = useState(false);
+
+  // Listen for localStorage changes (when MPDirectory sets a new MP and navigates here)
+  useEffect(() => {
+    const onStorage = () => {
+      const id = localStorage.getItem('mplad_mp_id');
+      if (id && id !== mpId) {
+        setMpId(id);
+        setActiveTab('overview');
+      }
+    };
+    window.addEventListener('storage', onStorage);
+    // Also check immediately on mount in case navigation happened in the same tab
+    const id = localStorage.getItem('mplad_mp_id');
+    if (id && id !== mpId) setMpId(id);
+    return () => window.removeEventListener('storage', onStorage);
+  }, []);
 
   useEffect(() => {
     setLoading(true);
