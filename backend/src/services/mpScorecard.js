@@ -16,8 +16,28 @@ function computeMPScores() {
   const communityReports = db.getAll('communityReports');
   const agencies = db.getAll('agencies');
 
+  // Pre-group projects by mpId to avoid O(N^2) scans
+  const projectsByMp = {};
+  for (const p of projects) {
+    if (!projectsByMp[p.mpId]) projectsByMp[p.mpId] = [];
+    projectsByMp[p.mpId].push(p);
+  }
+
+  // Pre-index agencies by id
+  const agencyMap = {};
+  for (const a of agencies) {
+    agencyMap[a.id] = a;
+  }
+
+  // Pre-group community reports by projectId
+  const reportsByProject = {};
+  for (const r of communityReports) {
+    if (!reportsByProject[r.projectId]) reportsByProject[r.projectId] = [];
+    reportsByProject[r.projectId].push(r);
+  }
+
   return mps.map(mp => {
-    const mpProjects = projects.filter(p => p.mpId === mp.id);
+    const mpProjects = projectsByMp[mp.id] || [];
     const total = mpProjects.length || 1;
 
     // Completion ratio
@@ -41,15 +61,20 @@ function computeMPScores() {
 
     // Fraud flag rate: from agencies used + community mismatches
     const mpAgencyIds = [...new Set(mpProjects.map(p => p.agencyId))];
-    const mpAgencies = agencies.filter(a => mpAgencyIds.includes(a.id));
+    const mpAgencies = mpAgencyIds.map(id => agencyMap[id]).filter(Boolean);
     const avgFraudFlags = mpAgencies.length > 0
       ? mpAgencies.reduce((s, a) => s + (a.fraudFlags || 0), 0) / mpAgencies.length
       : 0;
     const fraudScore = Math.max(0, 1 - avgFraudFlags / 5);
 
     // Community score: community reports about MP's projects
-    const mpProjectIds = new Set(mpProjects.map(p => p.id));
-    const relevantReports = communityReports.filter(r => mpProjectIds.has(r.projectId));
+    let relevantReports = [];
+    for (const p of mpProjects) {
+      if (reportsByProject[p.id]) {
+        relevantReports.push(...reportsByProject[p.id]);
+      }
+    }
+
     let communityScore = 0.7; // default if no reports
     if (relevantReports.length > 0) {
       const positiveReports = relevantReports.filter(r =>

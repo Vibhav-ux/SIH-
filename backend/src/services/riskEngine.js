@@ -22,14 +22,11 @@ function computeZScore(value, mean, stdDev) {
 }
 
 function scoreProject(project) {
-  const allProjects = db.getAll('projects');
-  const sameCategory = allProjects.filter(p => p.category === project.category && p.id !== project.id);
-
   const flags = [];
   let riskScore = 0;
 
   // ── 1. Cost Anomaly ────────────────────────────────────────────────────────
-  const categoryBudgets = sameCategory.map(p => p.budget).filter(Boolean);
+  const categoryBudgets = project._categoryBudgets || [];
   if (categoryBudgets.length >= 3) {
     const mean = categoryBudgets.reduce((a, b) => a + b, 0) / categoryBudgets.length;
     const stdDev = computeStdDev(categoryBudgets, mean);
@@ -95,7 +92,7 @@ function scoreProject(project) {
   }
 
   // ── 5. Community Mismatch ─────────────────────────────────────────────────
-  const reports = db.query('communityReports', r => r.projectId === project.id);
+  const reports = project._communityReports || [];
   if (reports.length >= 2) {
     const disputeReports = reports.filter(r =>
       r.statusClaim === 'NOT_STARTED' || r.statusClaim === 'LESS_THAN_25_PCT'
@@ -124,7 +121,32 @@ function scoreProject(project) {
 }
 
 function getAllRiskScores() {
-  return db.getAll('projects').map(scoreProject);
+  const allProjects = db.getAll('projects');
+  
+  // Pre-compute category budgets to avoid O(N^2)
+  const categoryBudgets = {};
+  for (const p of allProjects) {
+    if (p.budget) {
+      if (!categoryBudgets[p.category]) categoryBudgets[p.category] = [];
+      categoryBudgets[p.category].push(p.budget);
+    }
+  }
+
+  // Pre-compute community reports by project to avoid O(N^2)
+  const allReports = db.getAll('communityReports');
+  const reportsByProject = {};
+  for (const r of allReports) {
+    if (!reportsByProject[r.projectId]) reportsByProject[r.projectId] = [];
+    reportsByProject[r.projectId].push(r);
+  }
+
+  return allProjects.map(p => {
+    // Inject pre-computed data to avoid db.getAll or array scanning inside scoreProject
+    p._categoryBudgets = categoryBudgets[p.category] || [];
+    p._communityReports = reportsByProject[p.id] || [];
+    return scoreProject(p);
+  });
 }
 
 module.exports = { scoreProject, getAllRiskScores };
+
