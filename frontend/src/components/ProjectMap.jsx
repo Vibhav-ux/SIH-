@@ -30,9 +30,12 @@ export default function ProjectMap({ projects = [], height = 500, onMarkerClick 
     if (mapInstanceRef.current || !mapRef.current) return;
     const L = window.L;
 
+    const initialCenter = projects.length === 1 && projects[0].lat ? [projects[0].lat, projects[0].lng] : [22.5, 80.0];
+    const initialZoom = projects.length === 1 ? 17 : 5;
+
     mapInstanceRef.current = L.map(mapRef.current, {
-      center: [22.5, 80.0],
-      zoom: 5,
+      center: initialCenter,
+      zoom: initialZoom,
       zoomControl: true,
     });
 
