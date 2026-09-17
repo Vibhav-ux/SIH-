@@ -8,6 +8,31 @@ import ProjectMap from '../components/ProjectMap';
 const CATEGORIES = ['ROADS', 'INFRASTRUCTURE', 'EDUCATION', 'HEALTH', 'WATER', 'ENERGY', 'COMMUNITY', 'SANITATION', 'ENVIRONMENT', 'RURAL'];
 const STATUSES = ['IN_PROGRESS', 'COMPLETED', 'STALLED'];
 
+const getSatelliteImages = (projectId) => {
+  if (!projectId) return { before: '', after: '' };
+  const pairs = [
+    { // Urban Plot -> Crane
+      before: 'https://images.unsplash.com/photo-1590496794008-383c8070b257?w=1000&q=80&sat=-100',
+      after: 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=1000&q=80'
+    },
+    { // Dirt Field -> Highway
+      before: 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=1000&q=80&sat=-100',
+      after: 'https://images.unsplash.com/photo-1541888081156-3c0f6fbc3fc8?w=1000&q=80'
+    },
+    { // Grass -> Modern Building top-down
+      before: 'https://images.unsplash.com/photo-1584285406086-538058444a15?w=1000&q=80&sat=-100',
+      after: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=1000&q=80'
+    },
+    { // Sand lot -> Industrial Structure
+      before: 'https://images.unsplash.com/photo-1621252179027-94459d278660?w=1000&q=80&sat=-100',
+      after: 'https://images.unsplash.com/photo-1508450859948-4e04fabaa4ea?w=1000&q=80'
+    }
+  ];
+  // Deterministic pick based on project ID
+  const hash = projectId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  return pairs[hash % pairs.length];
+};
+
 export default function CitizenPortal() {
   const [stats, setStats] = useState(null);
   const [projects, setProjects] = useState([]);
@@ -406,7 +431,7 @@ export default function CitizenPortal() {
                 {/* Before Image (Barren land / old state) */}
                 <div style={{ 
                   position: 'absolute', inset: 0, 
-                  backgroundImage: 'url(https://images.unsplash.com/photo-1590496794008-383c8070b257?w=1000&q=80&sat=-100)', 
+                  backgroundImage: `url(${getSatelliteImages(selectedProject.id).before})`, 
                   backgroundSize: 'cover', backgroundPosition: 'center', filter: 'contrast(1.1) brightness(0.9)'
                 }}>
                   <div style={{ position: 'absolute', bottom: 12, right: 12, background: 'rgba(0,0,0,0.7)', border: '1px solid #334155', color: '#e2e8f0', fontFamily: 'monospace', fontSize: 11, padding: '4px 8px', borderRadius: 4 }}>
@@ -417,7 +442,7 @@ export default function CitizenPortal() {
                 {/* After Image (Construction in progress) */}
                 <div style={{ 
                   position: 'absolute', inset: 0, 
-                  backgroundImage: 'url(https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=1000&q=80)', 
+                  backgroundImage: `url(${getSatelliteImages(selectedProject.id).after})`, 
                   backgroundSize: 'cover', backgroundPosition: 'center', filter: 'contrast(1.1) brightness(0.9)',
                   clipPath: `polygon(0 0, ${sliderPos}% 0, ${sliderPos}% 100%, 0 100%)` 
                 }}>
