@@ -42,8 +42,8 @@ export default function AgencyTrustRegistry() {
   );
 
   return (
-    <div style={{ minHeight: '100vh', padding: '32px 24px' }}>
-      <div style={{ maxWidth: 1300, margin: '0 auto' }}>
+    <div className="min-h-screen p-4 md:p-8">
+      <div className="max-w-[1300px] mx-auto">
 
         {/* Header */}
         <div style={{ marginBottom: 32 }}>
@@ -59,13 +59,13 @@ export default function AgencyTrustRegistry() {
         </div>
 
         {/* Risk Summary */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 28 }}>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-7">
           {[
             { label: 'Low Risk Agencies', count: agencies.filter(a => a.riskLevel === 'LOW_RISK').length, color: '#10b981', icon: '✅' },
             { label: 'Medium Risk Agencies', count: agencies.filter(a => a.riskLevel === 'MEDIUM_RISK').length, color: '#f59e0b', icon: '⚠️' },
             { label: 'High Risk Agencies', count: agencies.filter(a => a.riskLevel === 'HIGH_RISK').length, color: '#f43f5e', icon: '🚨' },
           ].map(c => (
-            <div key={c.label} className="glass-card-static" style={{ padding: 20, display: 'flex', alignItems: 'center', gap: 16 }}>
+            <div key={c.label} className="glass-card-static p-4 md:p-5 flex items-center gap-4">
               <div style={{
                 width: 48, height: 48, borderRadius: 12, flexShrink: 0,
                 background: `${c.color}15`, border: `1px solid ${c.color}30`,
@@ -80,7 +80,7 @@ export default function AgencyTrustRegistry() {
         </div>
 
         {/* Filters */}
-        <div style={{ display: 'flex', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
+        <div className="flex flex-col sm:flex-row gap-3 mb-5 w-full">
           <div style={{ position: 'relative', flex: '1 1 250px' }}>
             <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)' }}>🔍</span>
             <input className="input-glass" style={{ paddingLeft: 38 }} placeholder="Search agency or state..."
@@ -98,9 +98,9 @@ export default function AgencyTrustRegistry() {
         </div>
 
         {/* Table */}
-        <div className="glass-card-static" style={{ padding: 0, overflow: 'hidden', marginBottom: 32 }}>
-          <div style={{ overflowX: 'auto' }}>
-            <table className="data-table">
+        <div className="glass-card-static p-0 overflow-hidden mb-8">
+          <div className="overflow-x-auto">
+            <table className="data-table min-w-[800px]">
               <thead>
                 <tr>
                   <th>Rank</th>
@@ -186,7 +186,7 @@ export default function AgencyTrustRegistry() {
               </div>
 
               {/* Score breakdown */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 24 }}>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
                 {[
                   { label: 'Completion', value: `${selected.completionRate}%`, color: '#10b981' },
                   { label: 'Delay', value: `${selected.delayScore}%`, color: '#4f46e5' },

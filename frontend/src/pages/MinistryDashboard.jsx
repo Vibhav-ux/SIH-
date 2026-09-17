@@ -48,21 +48,21 @@ export default function MinistryDashboard() {
   const lapseRisk = forecasts.filter(f => f.willLapse);
 
   return (
-    <div style={{ minHeight: '100vh', padding: '32px 24px' }}>
-      <div style={{ maxWidth: 1300, margin: '0 auto' }}>
+    <div className="min-h-screen p-4 md:p-8">
+      <div className="max-w-[1300px] mx-auto">
 
         {/* Header */}
-        <div style={{ marginBottom: 32 }}>
-          <h1 style={{ fontFamily: 'Outfit, sans-serif', fontSize: 28, fontWeight: 800, margin: 0, color: '#0f172a' }}>
+        <div className="mb-6 md:mb-8">
+          <h1 className="font-outfit text-2xl md:text-3xl font-extrabold text-slate-900 m-0">
             ⚖️ Ministry Dashboard
           </h1>
-          <p style={{ fontSize: 14, color: '#64748b', marginTop: 6 }}>
+          <p className="text-xs md:text-sm text-slate-500 mt-2">
             National overview · Proposal management · Fund oversight
           </p>
         </div>
 
         {/* Stats */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: 16, marginBottom: 28 }}>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 md:gap-4 mb-6 md:mb-7">
           {[
             { label: 'Pending Proposals', value: overview?.proposals?.pending || 0, icon: '⏳', color: '#f59e0b' },
             { label: 'Approved', value: overview?.proposals?.approved || 0, icon: '✅', color: '#10b981' },
@@ -74,15 +74,9 @@ export default function MinistryDashboard() {
         </div>
 
         {/* Tabs */}
-        <div style={{ display: 'flex', gap: 4, marginBottom: 24, background: 'var(--text-primary)', padding: 4, borderRadius: 12, width: 'fit-content' }}>
+        <div className="flex gap-1 mb-6 bg-slate-900 p-1 rounded-xl w-full md:w-fit overflow-x-auto">
           {['proposals', 'lapse-forecast', 'state-breakdown'].map(tab => (
-            <button key={tab} onClick={() => setActiveTab(tab)} style={{
-              padding: '8px 20px', borderRadius: 8, border: 'none', cursor: 'pointer',
-              background: activeTab === tab ? 'rgba(99,102,241,0.3)' : 'transparent',
-              color: activeTab === tab ? 'var(--text-primary)' : '#64748b',
-              fontSize: 13, fontWeight: 600, textTransform: 'capitalize', transition: 'all 0.2s',
-              whiteSpace: 'nowrap',
-            }}>
+            <button key={tab} onClick={() => setActiveTab(tab)} className={`px-4 md:px-5 py-2 rounded-lg border-none cursor-pointer text-xs md:text-sm font-semibold capitalize transition-all whitespace-nowrap flex-1 md:flex-none ${activeTab === tab ? 'bg-indigo-500/30 text-white' : 'bg-transparent text-slate-400'}`}>
               {tab === 'lapse-forecast' ? '⚡ Lapse Forecast' : tab === 'state-breakdown' ? '🗺️ State Breakdown' : '📋 Proposals'}
             </button>
           ))}
@@ -91,13 +85,9 @@ export default function MinistryDashboard() {
         {/* Proposals Tab */}
         {activeTab === 'proposals' && (
           <>
-            <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
+            <div className="flex gap-2 mb-4 overflow-x-auto pb-2">
               {['', 'PENDING', 'APPROVED', 'REJECTED'].map(s => (
-                <button key={s} onClick={() => setFilterStatus(s)} style={{
-                  padding: '6px 16px', borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600,
-                  background: filterStatus === s ? 'rgba(99,102,241,0.3)' : 'var(--text-primary)',
-                  color: filterStatus === s ? '#6366f1' : '#64748b',
-                }}>
+                <button key={s} onClick={() => setFilterStatus(s)} className={`px-3 py-1.5 md:px-4 md:py-2 rounded-lg border-none cursor-pointer text-xs font-semibold whitespace-nowrap ${filterStatus === s ? 'bg-indigo-500/30 text-indigo-500' : 'bg-slate-900 text-slate-400'}`}>
                   {s || 'All'} {s && `(${proposals.filter(p => p.status === s).length})`}
                 </button>
               ))}
@@ -161,8 +151,9 @@ export default function MinistryDashboard() {
             <div style={{ padding: '12px 16px', borderRadius: 10, background: 'rgba(249,115,22,0.1)', border: '1px solid rgba(249,115,22,0.3)', marginBottom: 20, fontSize: 13, color: '#fb923c' }}>
               ⚡ <strong>{lapseRisk.length} projects</strong> are at risk of fund lapse before their deadline. Act now to avoid treasury returns.
             </div>
-            <div className="glass-card-static" style={{ padding: 0, overflow: 'hidden' }}>
-              <table className="data-table">
+            <div className="glass-card-static p-0 overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="data-table min-w-[800px]">
                 <thead>
                   <tr><th>Project</th><th>MP</th><th>Current Utilization</th><th>Projected Utilization</th><th>Days Left</th><th>Shortfall</th><th>Risk</th></tr>
                 </thead>
@@ -201,27 +192,27 @@ export default function MinistryDashboard() {
 
         {/* State Breakdown Tab */}
         {activeTab === 'state-breakdown' && overview?.byState && (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {overview.byState.sort((a, b) => b.highRisk - a.highRisk).map(s => (
-              <div key={s.state} className="glass-card-static" style={{ padding: 20 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
-                  <div style={{ fontWeight: 700, color: '#0f172a' }}>{s.state}</div>
+              <div key={s.state} className="glass-card-static p-4 md:p-5">
+                <div className="flex justify-between items-start mb-4">
+                  <div className="font-bold text-slate-900 text-sm md:text-base">{s.state}</div>
                   {s.highRisk > 0 && (
-                    <span style={{ fontSize: 11, color: '#dc2626', background: 'rgba(244,63,94,0.15)', border: '1px solid rgba(244,63,94,0.3)', padding: '2px 8px', borderRadius: 20 }}>
+                    <span className="text-[10px] md:text-xs text-red-600 bg-red-500/15 border border-red-500/30 px-2 py-0.5 rounded-full whitespace-nowrap">
                       🚨 {s.highRisk} high risk
                     </span>
                   )}
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                <div className="grid grid-cols-2 gap-2">
                   {[
                     { label: 'Projects', value: s.total, color: '#4f46e5' },
                     { label: 'Completed', value: s.completed, color: '#10b981' },
                     { label: 'Budget', value: formatCurrency(s.budget), color: '#f59e0b' },
                     { label: 'Completion', value: `${Math.round((s.completed / s.total) * 100)}%`, color: s.completed / s.total >= 0.7 ? '#10b981' : '#f59e0b' },
                   ].map(item => (
-                    <div key={item.label} style={{ padding: '8px 12px', background: 'var(--text-primary)', borderRadius: 8, textAlign: 'center' }}>
-                      <div style={{ fontSize: 10, color: '#64748b', marginBottom: 3 }}>{item.label}</div>
-                      <div style={{ fontSize: 14, fontWeight: 700, color: item.color }}>{item.value}</div>
+                    <div key={item.label} className="p-2 md:p-3 bg-slate-900 rounded-lg text-center">
+                      <div className="text-[10px] text-slate-500 mb-1">{item.label}</div>
+                      <div className="text-xs md:text-sm font-bold" style={{ color: item.color }}>{item.value}</div>
                     </div>
                   ))}
                 </div>

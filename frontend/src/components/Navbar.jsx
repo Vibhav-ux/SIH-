@@ -56,17 +56,8 @@ export default function Navbar({ role, setRole, activeId, setActiveId }) {
   };
 
   return (
-    <nav style={{
-      background: 'rgba(255,253,249,0.98)',
-      borderBottom: '1px solid var(--border-subtle)',
-      backdropFilter: 'blur(20px)',
-      position: 'sticky', top: 0, zIndex: 100,
-    }}>
-      <div style={{
-        maxWidth: '1400px', margin: '0 auto',
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '0 1.5rem', height: '60px',
-      }}>
+    <nav className="sticky top-0 z-[100] backdrop-blur-xl bg-[#fffdf9]/95 border-b border-[var(--border-subtle)]">
+      <div className="max-w-[1400px] mx-auto flex items-center justify-between px-4 md:px-6 h-[60px]">
         {/* Logo */}
         <Link to="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           <span style={{ fontSize: '1.5rem' }}>👁️</span>
@@ -75,8 +66,8 @@ export default function Navbar({ role, setRole, activeId, setActiveId }) {
           </span>
         </Link>
 
-        {/* Nav Links */}
-        <div style={{ display: 'flex', gap: '0.25rem', alignItems: 'center', overflowX: 'auto', flex: 1, justifyContent: 'center', padding: '0 1rem' }}>
+        {/* Desktop Nav Links */}
+        <div className="hidden lg:flex gap-1 items-center flex-1 justify-center px-4">
           {visibleLinks.map(link => {
             const isActive = location.pathname === link.to || (link.to !== '/app/' && location.pathname.startsWith(link.to));
             return (
@@ -173,8 +164,40 @@ export default function Navbar({ role, setRole, activeId, setActiveId }) {
               </div>
             )}
           </div>
+          {/* Mobile Menu Toggle */}
+          <button 
+            className="lg:hidden ml-2 p-2 rounded-md bg-[var(--bg-secondary)] border border-[var(--border-subtle)]"
+            onClick={() => setMenuOpen(!menuOpen)}
+          >
+            {menuOpen ? '✕' : '☰'}
+          </button>
         </div>
       </div>
+
+      {/* Mobile Nav Links Dropdown */}
+      {menuOpen && (
+        <div className="lg:hidden border-t border-[var(--border-subtle)] bg-white max-h-[60vh] overflow-y-auto shadow-xl">
+          <div className="flex flex-col p-2">
+            {visibleLinks.map(link => {
+              const isActive = location.pathname === link.to || (link.to !== '/app/' && location.pathname.startsWith(link.to));
+              return (
+                <Link key={link.to} to={link.to} 
+                  onClick={() => setMenuOpen(false)}
+                  style={{
+                    textDecoration: 'none', padding: '12px 16px', borderRadius: '8px', fontSize: '0.9rem',
+                    fontWeight: isActive ? 700 : 500, fontFamily: "'Inter', sans-serif",
+                    color: isActive ? 'var(--text-primary)' : 'var(--text-secondary)',
+                    background: isActive ? `${currentRole.color}15` : 'transparent',
+                    borderLeft: isActive ? `4px solid ${currentRole.color}` : '4px solid transparent',
+                  }}
+                >
+                  {link.icon} <span className="ml-2">{link.label}</span>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </nav>
   );
 }

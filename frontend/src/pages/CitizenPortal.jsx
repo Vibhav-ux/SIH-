@@ -163,7 +163,7 @@ export default function CitizenPortal() {
           </div>
 
           {/* Stats Grid */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 16 }}>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3 md:gap-4">
             {[
               { label: 'Total Projects', value: stats?.totalProjects || 0, icon: '📋', color: '#4f46e5' },
               { label: 'Total Funds', value: stats ? Math.round(stats.totalBudget / 10000000) : 0, unit: ' Cr', icon: '💰', color: '#d97706' },
@@ -247,12 +247,11 @@ export default function CitizenPortal() {
         )}
 
         {/* Filters + View Toggle */}
-        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 24, alignItems: 'center' }}>
-          <div style={{ flex: '1 1 250px', position: 'relative', display: 'flex' }}>
-            <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', fontSize: 16, zIndex: 1 }}>🔍</span>
+        <div className="flex flex-wrap items-center gap-3 mb-6">
+          <div className="relative flex w-full md:flex-1 min-w-[250px]">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-base z-10">🔍</span>
             <input
-              className="input-glass"
-              style={{ paddingLeft: 38, borderTopRightRadius: 0, borderBottomRightRadius: 0, borderRight: 'none', flex: 1 }}
+              className="input-glass pl-10 rounded-r-none border-r-0 flex-1"
               placeholder="Search projects, state, district..."
               value={search}
               onChange={e => { setSearch(e.target.value); setUserLocation(null); }}
@@ -261,12 +260,7 @@ export default function CitizenPortal() {
             <button 
               onClick={handleLocateMe}
               disabled={isLocating}
-              style={{
-                padding: '0 16px', background: '#f8fafc', border: '1px solid #e2e8f0', 
-                borderTopRightRadius: 8, borderBottomRightRadius: 8,
-                color: '#4f46e5', fontWeight: 600, fontSize: 13, cursor: 'pointer',
-                display: 'flex', alignItems: 'center', gap: 6, transition: 'all 0.2s',
-              }}
+              className="px-3 md:px-4 bg-slate-50 border border-slate-200 rounded-r-lg text-indigo-600 font-semibold text-xs md:text-sm flex items-center gap-1 md:gap-2 transition-all"
             >
               {isLocating ? <span style={{ animation: 'spin 1s linear infinite' }}>⏳</span> : <span>📍</span>}
               {isLocating ? 'Locating...' : 'Near Me'}
@@ -278,24 +272,22 @@ export default function CitizenPortal() {
             { value: filterStatus, set: setFilterStatus, options: STATUSES, placeholder: 'All Status' },
             { value: filterRisk, set: setFilterRisk, options: ['HIGH', 'MEDIUM', 'LOW'], placeholder: 'All Risk Levels' },
           ].map((f, i) => (
-            <select key={i} className="input-glass" style={{ flex: '0 1 160px' }}
+            <select key={i} className="input-glass w-full md:w-[160px] flex-none"
               value={f.value} onChange={e => f.set(e.target.value)}>
               <option value="">{f.placeholder}</option>
               {f.options.map(o => <option key={o} value={o}>{o.replace(/_/g, ' ')}</option>)}
             </select>
           ))}
 
-          <div style={{ display: 'flex', gap: 4, background: 'var(--text-primary)', padding: 4, borderRadius: 10, border: '1px solid #e2e8f0' }}>
+          <div className="flex gap-1 bg-white p-1 rounded-lg border border-slate-200 w-full justify-center md:w-auto">
             {[['grid', '⊞'], ['map', '🗺️']].map(([v, icon]) => (
-              <button key={v} onClick={() => setView(v)} style={{
-                padding: '6px 14px', borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 14,
-                background: view === v ? '#4f46e5' : 'transparent',
-                color: view === v ? 'var(--text-primary)' : '#64748b', transition: 'all 0.2s',
-              }}>{icon}</button>
+              <button key={v} onClick={() => setView(v)} className={`px-4 py-1.5 rounded-md border-none cursor-pointer text-sm transition-all flex-1 md:flex-none ${view === v ? 'bg-indigo-600 text-white' : 'bg-transparent text-slate-500'}`}>
+                {icon}
+              </button>
             ))}
           </div>
 
-          <div style={{ fontSize: 13, color: 'var(--text-secondary)', flexShrink: 0 }}>
+          <div className="text-xs text-slate-500 hidden md:block">
             {filtered.length} projects
           </div>
         </div>
@@ -309,7 +301,7 @@ export default function CitizenPortal() {
 
         {/* Grid View */}
         {view === 'grid' && (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: 16 }}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {loading
               ? Array(6).fill(0).map((_, i) => (
                   <div key={i} className="glass-card-static" style={{ padding: 20, height: 220 }}>

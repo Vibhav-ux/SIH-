@@ -53,10 +53,7 @@ export default function MPDirectory() {
   const totalPages = Math.ceil(total / LIMIT);
 
   return (
-    <div style={{
-      padding: '2rem', fontFamily: "'Inter', sans-serif",
-      minHeight: '100vh', background: '#0a0f1e', color: '#f1f5f9',
-    }}>
+    <div className="p-4 md:p-8 font-inter min-h-screen bg-[#0a0f1e] text-slate-100">
 
       {/* Header */}
       <div style={{ marginBottom: '1.5rem' }}>
@@ -69,74 +66,67 @@ export default function MPDirectory() {
       </div>
 
       {/* Stats Bar */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '0.75rem', marginBottom: '1.25rem' }}>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
         {[
           { label: 'Total MPs', value: (Number(lok?.count || 0) + Number(rajya?.count || 0)).toLocaleString(), color: '#6366f1' },
           { label: 'Lok Sabha', value: Number(lok?.count || 0).toLocaleString(), color: '#6366f1' },
           { label: 'Rajya Sabha', value: Number(rajya?.count || 0).toLocaleString(), color: '#f59e0b' },
           { label: 'Total Allocated', value: formatCurrency(statTotal), color: '#10b981' },
         ].map((s, i) => (
-          <div key={i} style={{
-            background: '#1e293b', borderRadius: '10px', padding: '0.8rem 1rem',
-            border: `1px solid ${s.color}25`,
-          }}>
-            <div style={{ color: '#64748b', fontSize: '0.7rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{s.label}</div>
-            <div style={{ color: s.color, fontSize: '1.25rem', fontWeight: 800, marginTop: '2px' }}>{s.value}</div>
+          <div key={i} className="bg-slate-800 rounded-xl p-3 md:p-4" style={{ border: `1px solid ${s.color}25` }}>
+            <div className="text-slate-500 text-[10px] md:text-xs font-semibold uppercase tracking-wider">{s.label}</div>
+            <div className="font-extrabold mt-1 text-lg md:text-xl" style={{ color: s.color }}>{s.value}</div>
           </div>
         ))}
       </div>
 
       {/* Filters */}
-      <div style={{ display: 'flex', gap: '0.6rem', marginBottom: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
+      <div className="flex flex-col md:flex-row gap-2 md:gap-3 mb-4 items-start md:items-center">
         <input
           value={filters.search}
           onChange={e => { setFilters(f => ({ ...f, search: e.target.value })); setPage(0); }}
           placeholder="🔍  Search name or constituency..."
-          style={{
-            flex: '2', minWidth: '200px', padding: '0.6rem 1rem', borderRadius: '8px',
-            background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)',
-            color: '#f1f5f9', fontSize: '0.87rem', outline: 'none',
-          }}
+          className="w-full md:flex-2 md:min-w-[200px] p-2 md:p-3 rounded-lg bg-white/5 border border-white/10 text-slate-100 text-sm outline-none"
         />
-        <select value={filters.type} onChange={e => { setFilters(f => ({ ...f, type: e.target.value })); setPage(0); }}
-          style={{ padding: '0.6rem 1rem', borderRadius: '8px', background: '#1e293b', border: '1px solid rgba(255,255,255,0.1)', color: '#f1f5f9', fontSize: '0.87rem', outline: 'none' }}>
-          <option value="">All Houses</option>
-          <option value="Lok Sabha">Lok Sabha</option>
-          <option value="Rajya Sabha">Rajya Sabha</option>
-        </select>
-        <select value={filters.state} onChange={e => { setFilters(f => ({ ...f, state: e.target.value })); setPage(0); }}
-          style={{ padding: '0.6rem 1rem', borderRadius: '8px', background: '#1e293b', border: '1px solid rgba(255,255,255,0.1)', color: '#f1f5f9', fontSize: '0.87rem', outline: 'none' }}>
-          <option value="">All States</option>
-          {states.map(s => <option key={s} value={s}>{s}</option>)}
-        </select>
-        <span style={{ color: '#475569', fontSize: '0.82rem', whiteSpace: 'nowrap' }}>
+        <div className="flex gap-2 w-full md:w-auto">
+          <select value={filters.type} onChange={e => { setFilters(f => ({ ...f, type: e.target.value })); setPage(0); }}
+            className="flex-1 p-2 md:p-3 rounded-lg bg-slate-800 border border-white/10 text-slate-100 text-sm outline-none">
+            <option value="">All Houses</option>
+            <option value="Lok Sabha">Lok Sabha</option>
+            <option value="Rajya Sabha">Rajya Sabha</option>
+          </select>
+          <select value={filters.state} onChange={e => { setFilters(f => ({ ...f, state: e.target.value })); setPage(0); }}
+            className="flex-1 p-2 md:p-3 rounded-lg bg-slate-800 border border-white/10 text-slate-100 text-sm outline-none">
+            <option value="">All States</option>
+            {states.map(s => <option key={s} value={s}>{s}</option>)}
+          </select>
+        </div>
+        <span className="text-slate-500 text-xs hidden md:block whitespace-nowrap">
           {total.toLocaleString()} MPs
         </span>
       </div>
 
       {/* List */}
-      <div style={{
-        background: '#1e293b', borderRadius: '12px',
-        border: '1px solid rgba(255,255,255,0.07)', overflow: 'hidden',
-      }}>
-        {/* Column Header */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: '32px 1fr 1.2fr 1fr 90px 160px 90px',
-          padding: '0.6rem 1.25rem',
-          background: 'rgba(255,255,255,0.04)',
-          fontSize: '0.68rem', color: '#475569',
-          fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em',
-          borderBottom: '1px solid rgba(255,255,255,0.06)',
-        }}>
-          <div>#</div>
-          <div>Name</div>
-          <div>Constituency</div>
-          <div>State</div>
-          <div>House</div>
-          <div>Allocated</div>
-          <div>Utilization</div>
-        </div>
+      <div className="bg-slate-800 rounded-xl border border-white/5 overflow-x-auto">
+        <div className="min-w-[800px]">
+          {/* Column Header */}
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: '32px 1fr 1.2fr 1fr 90px 160px 90px',
+            padding: '0.6rem 1.25rem',
+            background: 'rgba(255,255,255,0.04)',
+            fontSize: '0.68rem', color: '#475569',
+            fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em',
+            borderBottom: '1px solid rgba(255,255,255,0.06)',
+          }}>
+            <div>#</div>
+            <div>Name</div>
+            <div>Constituency</div>
+            <div>State</div>
+            <div>House</div>
+            <div>Allocated</div>
+            <div>Utilization</div>
+          </div>
 
         {loading ? (
           Array.from({ length: 10 }).map((_, i) => (
@@ -232,6 +222,7 @@ export default function MPDirectory() {
             </div>
           );
         })}
+        </div>
       </div>
 
       {/* Pagination */}
