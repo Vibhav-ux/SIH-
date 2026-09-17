@@ -81,9 +81,71 @@ router.get('/neon/:mpId', async (req, res) => {
 // IN-MEMORY STORE ROUTES (Projects, proposals, alerts etc.)
 // ============================================================
 
+// Helper: Dynamically generate dummy data for an MP if they have none.
+// This ensures that clicking any real MP from the Neon DB in the frontend
+// renders a fully populated dashboard for presentation purposes.
+function ensureMpDataExists(mpId) {
+  const projects = db.query('projects', p => p.mpId === mpId);
+  if (projects.length > 0) return; // Data already exists
+
+  const mp = db.getById('mps', mpId) || supabaseDb.getMpById(mpId);
+  const state = mp?.state || 'Unknown State';
+  const agencies = db.getAll('agencies');
+  const baseAgency = agencies.length > 0 ? agencies[Math.floor(Math.random() * agencies.length)].id : 'ag-001';
+
+  const categories = ['ROADS', 'WATER', 'EDUCATION', 'HEALTH', 'COMMUNITY'];
+  const baseLat = 22.0 + Math.random() * 5;
+  const baseLng = 78.0 + Math.random() * 5;
+
+  // Generate 5-8 random projects
+  const numProjects = 5 + Math.floor(Math.random() * 4);
+  for (let i = 0; i < numProjects; i++) {
+    const budget = 1000000 + Math.floor(Math.random() * 4000000);
+    const disbursed = Math.floor(budget * (Math.random() * 0.9 + 0.1));
+    const isCompleted = Math.random() > 0.6;
+    
+    db.seed('projects', uuidv4(), {
+      mpId,
+      agencyId: baseAgency,
+      title: `${categories[i % categories.length]} Development - Phase ${i + 1}`,
+      category: categories[i % categories.length],
+      state,
+      district: mp?.constituency || 'Local District',
+      lat: baseLat + (Math.random() - 0.5) * 0.1,
+      lng: baseLng + (Math.random() - 0.5) * 0.1,
+      budget,
+      disbursed: isCompleted ? budget : disbursed,
+      status: isCompleted ? 'COMPLETED' : (Math.random() > 0.8 ? 'STALLED' : 'IN_PROGRESS'),
+      completionPct: isCompleted ? 100 : Math.floor(Math.random() * 80 + 10),
+      startDate: `2023-0${Math.floor(Math.random() * 9) + 1}-01`,
+      endDate: `2025-0${Math.floor(Math.random() * 9) + 1}-28`,
+      description: 'Standard infrastructure improvement project generated for dashboard presentation.',
+      riskScore: Math.floor(Math.random() * 100),
+      lapseRisk: Math.random() > 0.8,
+    });
+  }
+
+  // Generate 1-2 proposals
+  for (let i = 0; i < 2; i++) {
+    db.seed('proposals', uuidv4(), {
+      mpId,
+      title: `Proposed ${categories[Math.floor(Math.random() * categories.length)]} Expansion`,
+      category: categories[Math.floor(Math.random() * categories.length)],
+      estimatedBudget: 2500000 + Math.floor(Math.random() * 2000000),
+      description: 'Requested fund allocation for expanding local infrastructure.',
+      lat: baseLat + 0.05,
+      lng: baseLng - 0.05,
+      status: i === 0 ? 'PENDING' : (Math.random() > 0.5 ? 'APPROVED' : 'REJECTED'),
+      submittedAt: new Date().toISOString(),
+      ministerRemarks: i === 0 ? null : 'Reviewed by oversight committee.',
+    });
+  }
+}
+
 // GET /api/mp/:mpId/overview - MP dashboard overview
 router.get('/:mpId/overview', async (req, res) => {
   const { mpId } = req.params;
+  ensureMpDataExists(mpId);
   
   const mp = db.getById('mps', mpId);
   if (!mp) return res.status(404).json({ error: 'MP not found' });
@@ -123,6 +185,7 @@ router.get('/:mpId/overview', async (req, res) => {
 // GET /api/mp/:mpId/projects - MP's projects with risk scores
 router.get('/:mpId/projects', (req, res) => {
   const { mpId } = req.params;
+  ensureMpDataExists(mpId);
   const projects = db.query('projects', p => p.mpId === mpId);
   const agencies = db.getAll('agencies');
 
@@ -139,6 +202,7 @@ router.get('/:mpId/projects', (req, res) => {
 // GET /api/mp/:mpId/proposals - MP's proposals
 router.get('/:mpId/proposals', (req, res) => {
   const { mpId } = req.params;
+  ensureMpDataExists(mpId);
   const proposals = db.query('proposals', p => p.mpId === mpId);
   res.json(proposals);
 });
@@ -177,6 +241,7 @@ router.post('/:mpId/proposals', (req, res) => {
 // GET /api/mp/:mpId/alerts - Risk alerts for MP
 router.get('/:mpId/alerts', (req, res) => {
   const { mpId } = req.params;
+  ensureMpDataExists(mpId);
   const projects = db.query('projects', p => p.mpId === mpId);
   const alerts = [];
 
