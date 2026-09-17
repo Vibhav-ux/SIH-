@@ -27,6 +27,7 @@ export default function CitizenPortal() {
   // New State variables for WOW features
   const [isLocating, setIsLocating] = useState(false);
   const [sliderPos, setSliderPos] = useState(50); // Satellite slider position (0-100)
+  const [userLocation, setUserLocation] = useState(null);
 
   useEffect(() => {
     Promise.all([citizenApi.getStats(), citizenApi.getProjects(), aiApi.getMPScores()])
@@ -42,16 +43,35 @@ export default function CitizenPortal() {
 
   useEffect(() => {
     let result = [...projects];
-    if (search) result = result.filter(p =>
-      p.title.toLowerCase().includes(search.toLowerCase()) ||
-      p.state?.toLowerCase().includes(search.toLowerCase()) ||
-      p.district?.toLowerCase().includes(search.toLowerCase())
-    );
+    if (search) {
+      const q = search.toLowerCase();
+      result = result.filter(p =>
+        p.title.toLowerCase().includes(q) ||
+        p.state?.toLowerCase().includes(q) ||
+        p.district?.toLowerCase().includes(q)
+      );
+    }
     if (filterCategory) result = result.filter(p => p.category === filterCategory);
     if (filterStatus) result = result.filter(p => p.status === filterStatus);
     if (filterRisk) result = result.filter(p => p.riskLevel === filterRisk);
+
+    if (userLocation) {
+      const getDistance = (lat1, lon1, lat2, lon2) => {
+        const R = 6371; // km
+        const dLat = (lat2 - lat1) * Math.PI / 180;
+        const dLon = (lon2 - lon1) * Math.PI / 180;
+        const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon/2) * Math.sin(dLon/2);
+        return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+      };
+      
+      result = result.map(p => ({
+        ...p,
+        distance: getDistance(userLocation.lat, userLocation.lng, p.lat, p.lng)
+      })).sort((a, b) => a.distance - b.distance).slice(0, 30);
+    }
+
     setFiltered(result);
-  }, [search, filterCategory, filterStatus, filterRisk, projects]);
+  }, [search, filterCategory, filterStatus, filterRisk, projects, userLocation]);
 
   async function handleReport(e) {
     e.preventDefault();
@@ -69,11 +89,23 @@ export default function CitizenPortal() {
 
   const handleLocateMe = () => {
     setIsLocating(true);
-    setTimeout(() => {
+    if ('geolocation' in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+          setIsLocating(false);
+        },
+        (err) => {
+          console.warn('Geolocation error:', err);
+          alert('Could not get live location. Ensure location permissions are granted.');
+          setIsLocating(false);
+        },
+        { enableHighAccuracy: true, timeout: 10000 }
+      );
+    } else {
+      alert('Geolocation is not supported by your browser.');
       setIsLocating(false);
-      // Simulate finding projects near 'Maharashtra' or 'Uttar Pradesh'
-      setSearch('Maharashtra');
-    }, 1500);
+    }
   };
 
   const gradeColor = (g) => ({ A: '#059669', B: '#4f46e5', C: '#d97706', D: '#ea580c', F: '#dc2626' }[g] || 'var(--text-secondary)');
@@ -223,7 +255,7 @@ export default function CitizenPortal() {
               style={{ paddingLeft: 38, borderTopRightRadius: 0, borderBottomRightRadius: 0, borderRight: 'none', flex: 1 }}
               placeholder="Search projects, state, district..."
               value={search}
-              onChange={e => setSearch(e.target.value)}
+              onChange={e => { setSearch(e.target.value); setUserLocation(null); }}
             />
             {/* 1. Projects Near Me Button */}
             <button 
