@@ -112,11 +112,24 @@ function seedAll() {
     { id:'ext-002', scheme:'AMRUT', title:'Flood Protection Embankment — Dharmatala',     lat:22.56, lng:88.35, budget:2000000, startDate:'2024-01-01', endDate:'2025-05-31', state:'West Bengal', contractor:'Bengal Municipal Works' },
   ];
   externalSchemes.forEach(e => seedRaw('externalSchemes', e.id, e));
+  // Populate Audit Ledger with recent mock entries
+  const auditLedger = require('../services/auditLedger');
+  const mockProjects = Array.from(projects).slice(0, 5);
+  for (const p of mockProjects) {
+    auditLedger.append({
+      table: 'projects', id: p.id, action: 'CREATE', actor: 'ministry_nodal_officer',
+      payload: { status: 'PENDING', amount: p.budget }
+    });
+    auditLedger.append({
+      table: 'projects', id: p.id, action: 'UPDATE', actor: 'district_magistrate',
+      payload: { status: 'APPROVED' }
+    });
+  }
 
   db.markSeeded();
   const mpCount   = Object.keys(db.store?.mps      || {}).length;
   const projCount = Object.keys(db.store?.projects  || {}).length;
-  console.log(`✅ Seeded: ${mpCount} MPs · ${projCount} projects · ${agencies.length} agencies`);
+  console.log(`✅ Seeded: ${mpCount} MPs · ${projCount} projects · ${agencies.length} agencies · 10 audit entries`);
 }
 
 module.exports = { seedAll, generateMpData };
