@@ -23,10 +23,13 @@ export default function CitizenPortal() {
   const [reportSubmitted, setReportSubmitted] = useState(false);
   const [view, setView] = useState('grid');
   const [mpScores, setMpScores] = useState([]);
+  const [totalProjects, setTotalProjects] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [loadingMore, setLoadingMore] = useState(false);
   
   // New State variables for WOW features
   const [isLocating, setIsLocating] = useState(false);
-  const [sliderPos, setSliderPos] = useState(50); // Satellite slider position (0-100)
+  const [sliderPos, setSliderPos] = useState(50);
   const [userLocation, setUserLocation] = useState(null);
 
   useEffect(() => {
@@ -36,6 +39,7 @@ export default function CitizenPortal() {
         setStats(stats);
         setProjects(p);
         setFiltered(p);
+        setTotalProjects(total || p.length);
         setLoading(false);
       })
       .catch(console.error);
@@ -45,6 +49,22 @@ export default function CitizenPortal() {
       .then(ms => setMpScores(ms.scores?.slice(0, 5) || []))
       .catch(() => {});
   }, []);
+
+  async function loadMoreProjects() {
+    setLoadingMore(true);
+    const nextPage = currentPage + 1;
+    try {
+      const filters = {};
+      if (filterCategory) filters.category = filterCategory;
+      if (filterStatus) filters.status = filterStatus;
+      const data = await citizenApi.getMoreProjects(nextPage, filters);
+      const newProjects = data.projects || data;
+      setProjects(prev => [...prev, ...newProjects]);
+      setFiltered(prev => [...prev, ...newProjects]);
+      setCurrentPage(nextPage);
+    } catch (e) { console.error(e); }
+    setLoadingMore(false);
+  }
 
 
   useEffect(() => {
@@ -307,31 +327,56 @@ export default function CitizenPortal() {
 
         {/* Grid View */}
         {view === 'grid' && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {loading
-              ? Array(6).fill(0).map((_, i) => (
-                  <div key={i} className="glass-card-static" style={{ padding: 20, height: 220 }}>
-                    <div className="skeleton" style={{ height: 14, width: '60%', marginBottom: 12 }} />
-                    <div className="skeleton" style={{ height: 18, width: '90%', marginBottom: 8 }} />
-                    <div className="skeleton" style={{ height: 12, width: '50%', marginBottom: 20 }} />
-                    <div className="skeleton" style={{ height: 6, width: '100%', marginBottom: 16 }} />
-                    <div className="skeleton" style={{ height: 14, width: '70%' }} />
-                  </div>
-                ))
-              : filtered.map(p => (
-                  <ProjectCard key={p.id} project={p} onClick={() => setSelectedProject(p)} />
-                ))
-            }
-            {!loading && filtered.length === 0 && (
-              <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: 60, color: 'var(--text-secondary)' }}>
-                <div style={{ fontSize: 48, marginBottom: 16 }}>🔍</div>
-                <div style={{ fontSize: 18, fontWeight: 600, marginBottom: 8, color: '#475569' }}>No projects found</div>
-                <div>Try adjusting your filters</div>
+          <div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {loading
+                ? Array(6).fill(0).map((_, i) => (
+                    <div key={i} className="glass-card-static" style={{ padding: 20, height: 220 }}>
+                      <div className="skeleton" style={{ height: 14, width: '60%', marginBottom: 12 }} />
+                      <div className="skeleton" style={{ height: 18, width: '90%', marginBottom: 8 }} />
+                      <div className="skeleton" style={{ height: 12, width: '50%', marginBottom: 20 }} />
+                      <div className="skeleton" style={{ height: 6, width: '100%', marginBottom: 16 }} />
+                      <div className="skeleton" style={{ height: 14, width: '70%' }} />
+                    </div>
+                  ))
+                : filtered.map(p => (
+                    <ProjectCard key={p.id} project={p} onClick={() => setSelectedProject(p)} />
+                  ))
+              }
+              {!loading && filtered.length === 0 && (
+                <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: 60, color: 'var(--text-secondary)' }}>
+                  <div style={{ fontSize: 48, marginBottom: 16 }}>🔍</div>
+                  <div style={{ fontSize: 18, fontWeight: 600, marginBottom: 8, color: '#475569' }}>No projects found</div>
+                  <div>Try adjusting your filters</div>
+                </div>
+              )}
+            </div>
+
+            {/* Load More Button */}
+            {!loading && projects.length < totalProjects && (
+              <div style={{ textAlign: 'center', marginTop: 32 }}>
+                <div style={{ fontSize: 13, color: '#94a3b8', marginBottom: 12 }}>
+                  Showing {projects.length} of {totalProjects} projects
+                </div>
+                <button
+                  onClick={loadMoreProjects}
+                  disabled={loadingMore}
+                  style={{
+                    padding: '12px 36px', borderRadius: 12, border: 'none', cursor: loadingMore ? 'not-allowed' : 'pointer',
+                    background: 'linear-gradient(135deg, #4f46e5, #7c3aed)', color: 'white',
+                    fontSize: 14, fontWeight: 700, fontFamily: 'Outfit, sans-serif',
+                    boxShadow: '0 4px 15px rgba(79,70,229,0.3)',
+                    opacity: loadingMore ? 0.7 : 1, transition: 'all 0.2s',
+                  }}
+                >
+                  {loadingMore ? '⏳ Loading...' : `📋 Load More Projects (${totalProjects - projects.length} remaining)`}
+                </button>
               </div>
             )}
           </div>
         )}
       </div>
+
 
       {/* Project Detail Modal */}
       {selectedProject && (

@@ -32,8 +32,15 @@ async function createTables() {
 async function loadAll(store) {
   let totalLoaded = 0;
 
-  // Load all generic store tables in parallel for max speed
-  const loadPromises = Object.entries(TABLE_MAP).map(async ([storeKey, supabaseTable]) => {
+  // Only load non-seed tables from Supabase.
+  // projects/proposals/mps come from seeded-data.json — loading old Supabase
+  // versions would overwrite with stale data (old mpId formats like "mp-005").
+  const LOAD_FROM_SUPABASE = ['agencies', 'complaints', 'communityReports', 'externalSchemes', 'progressUpdates'];
+
+  const loadPromises = Object.entries(TABLE_MAP)
+    .filter(([storeKey]) => LOAD_FROM_SUPABASE.includes(storeKey))
+    .map(async ([storeKey, supabaseTable]) => {
+
     try {
       const { data, error } = await supabase
         .from(supabaseTable)
@@ -61,42 +68,8 @@ async function loadAll(store) {
   const counts = await Promise.all(loadPromises);
   totalLoaded += counts.reduce((a, b) => a + b, 0);
 
-  // Load MPs from the typed mps table
-  try {
-    const { data: mpsData, error: mpsError } = await supabase
-      .from('mps')
-      .select('*');
-
-    if (mpsError) {
-      console.warn('[Supabase] Could not load mps:', mpsError.message);
-    } else {
-      if (!store.mps) store.mps = {};
-      for (const row of (mpsData || [])) {
-        store.mps[row.id] = {
-          id: row.id,
-          name: row.mp_name || row.name,
-          constituency: row.constituency,
-          state: row.state,
-          party: row.party,
-          house: row.house,
-          totalFunds: Number(row.allocated_amount || row.total_funds) || 0,
-          usedFunds: Number(row.total_expenditure || row.used_funds) || 0,
-          utilizationPercentage: Number(row.utilization_percentage) || 0,
-          completedWorksCount: Number(row.completed_works_count) || 0,
-          recommendedWorksCount: Number(row.recommended_works_count) || 0,
-          completionRate: Number(row.completion_rate) || 0,
-          unspentAmount: Number(row.unspent_amount) || 0,
-          riskScore: Number(row.risk_score) || 0,
-          email: row.email || '',
-          phone: row.phone || '',
-          type: row.house || row.type || 'Lok Sabha',
-        };
-        totalLoaded++;
-      }
-    }
-  } catch (err) {
-    console.warn('[Supabase] MPs load error:', err.message);
-  }
+  // NOTE: MPs are NOT loaded from Supabase — they come from seeded-data.json
+  // which uses the correct LS-001/RS-001 ID format.
 
   console.log(`[Supabase] Loaded ${totalLoaded} records into memory`);
   return totalLoaded;
