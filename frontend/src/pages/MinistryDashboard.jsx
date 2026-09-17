@@ -154,41 +154,43 @@ export default function MinistryDashboard() {
             <div className="glass-card-static p-0 overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="data-table min-w-[800px]">
-                <thead>
-                  <tr><th>Project</th><th>MP</th><th>Current Utilization</th><th>Projected Utilization</th><th>Days Left</th><th>Shortfall</th><th>Risk</th></tr>
-                </thead>
-                <tbody>
-                  {forecasts.map(f => (
-                    <tr key={f.projectId}>
-                      <td style={{ color: '#0f172a', fontWeight: 500, maxWidth: 200 }}>{f.projectTitle}</td>
-                      <td style={{ color: '#6366f1', fontSize: 12 }}>{f.mpId}</td>
-                      <td>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                          <div className="progress-track" style={{ width: 60 }}>
-                            <div className="progress-fill" style={{ width: `${f.currentUtilizationPct}%`, background: f.willLapse ? '#f43f5e' : '#10b981' }} />
+                  <thead>
+                    <tr><th>Project</th><th>MP</th><th>Current Utilization</th><th>Projected Utilization</th><th>Days Left</th><th>Shortfall</th><th>Risk</th></tr>
+                  </thead>
+                  <tbody>
+                    {forecasts.map(f => (
+                      <tr key={f.projectId}>
+                        <td style={{ color: '#0f172a', fontWeight: 500, maxWidth: 200 }}>{f.projectTitle}</td>
+                        <td style={{ color: '#6366f1', fontSize: 12 }}>{f.mpId}</td>
+                        <td>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <div className="progress-track" style={{ width: 60 }}>
+                              <div className="progress-fill" style={{ width: `${f.currentUtilizationPct}%`, background: f.willLapse ? '#f43f5e' : '#10b981' }} />
+                            </div>
+                            <span style={{ fontSize: 12 }}>{f.currentUtilizationPct}%</span>
                           </div>
-                          <span style={{ fontSize: 12 }}>{f.currentUtilizationPct}%</span>
-                        </div>
-                      </td>
-                      <td>
-                        <span style={{ color: f.willLapse ? '#f43f5e' : '#10b981', fontWeight: 600, fontSize: 13 }}>
-                          {f.projectedUtilizationPct}%
-                        </span>
-                      </td>
-                      <td style={{ fontWeight: 600, color: f.remainingDays < 90 ? '#f43f5e' : 'var(--text-secondary)' }}>{f.remainingDays}d</td>
-                      <td style={{ color: '#f59e0b' }}>{f.willLapse ? formatCurrency(f.shortfallAmount) : '—'}</td>
-                      <td>
-                        <span className={`badge badge-${f.lapseRiskLevel === 'CRITICAL' ? 'critical' : f.lapseRiskLevel === 'HIGH' ? 'high' : 'low'}`}>
-                          {f.lapseRiskLevel}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                        </td>
+                        <td>
+                          <span style={{ color: f.willLapse ? '#f43f5e' : '#10b981', fontWeight: 600, fontSize: 13 }}>
+                            {f.projectedUtilizationPct}%
+                          </span>
+                        </td>
+                        <td style={{ fontWeight: 600, color: f.remainingDays < 90 ? '#f43f5e' : 'var(--text-secondary)' }}>{f.remainingDays}d</td>
+                        <td style={{ color: '#f59e0b' }}>{f.willLapse ? formatCurrency(f.shortfallAmount) : '—'}</td>
+                        <td>
+                          <span className={`badge badge-${f.lapseRiskLevel === 'CRITICAL' ? 'critical' : f.lapseRiskLevel === 'HIGH' ? 'high' : 'low'}`}>
+                            {f.lapseRiskLevel}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         )}
+
 
         {/* State Breakdown Tab */}
         {activeTab === 'state-breakdown' && overview?.byState && (

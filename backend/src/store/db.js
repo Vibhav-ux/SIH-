@@ -47,7 +47,7 @@ function write(table, id, data, actor = 'system', action = 'WRITE') {
   return record;
 }
 
-// ─── Silent Write (no audit — for seeding) ────────────────────────────────────
+// ─── Silent Write (no audit — for seeding, persists to Supabase) ────────────────
 function seed(table, id, data) {
   if (!store[table]) store[table] = {};
   const record = { ...data, id };
@@ -56,6 +56,16 @@ function seed(table, id, data) {
   // Also persist to Supabase silently
   supabasePersist.saveRecord(table, id, record);
 
+  return record;
+}
+
+// ─── Raw Seed Write (no audit, NO Supabase persist — for bulk generated data) ─
+// Use this for seeding thousands of generated records at startup to avoid
+// flooding the network with thousands of failing async Supabase requests.
+function seedRaw(table, id, data) {
+  if (!store[table]) store[table] = {};
+  const record = { ...data, id };
+  store[table][id] = record;
   return record;
 }
 
@@ -70,4 +80,5 @@ function remove(table, id, actor = 'system') {
   return false;
 }
 
-module.exports = { store, getAll, getById, query, write, seed, remove, markSeeded, isSeeded };
+module.exports = { store, getAll, getById, query, write, seed, seedRaw, remove, markSeeded, isSeeded };
+

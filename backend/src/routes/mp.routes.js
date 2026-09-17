@@ -89,9 +89,20 @@ function ensureMpDataExists(mpId, mp) {
   generateMpData(mpId, state, constituency, lat, lng);
 }
 
+// Simple in-memory response cache: mpId → { payload, ts }
+const _fullCache = new Map();
+const FULL_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
 // GET /api/mp/:mpId/full — Combined endpoint: overview + projects + proposals + alerts in ONE request
 router.get('/:mpId/full', async (req, res) => {
   const { mpId } = req.params;
+
+  // Serve from cache if fresh
+  const hit = _fullCache.get(mpId);
+  if (hit && Date.now() - hit.ts < FULL_CACHE_TTL) {
+    return res.json(hit.payload);
+  }
+
   let mp = db.getById('mps', mpId);
   if (!mp) return res.status(404).json({ error: 'MP not found' });
 
@@ -99,6 +110,7 @@ router.get('/:mpId/full', async (req, res) => {
 
   const projects = db.query('projects', p => p.mpId === mpId);
   const proposals = db.query('proposals', p => p.mpId === mpId);
+
   const agencies = db.getAll('agencies');
 
   const enrichedProjects = projects.map(p => ({
@@ -136,8 +148,13 @@ router.get('/:mpId/full', async (req, res) => {
     projects: enrichedProjects,
     proposals,
     alerts: alerts.sort((a, b) => (a.severity === 'CRITICAL' ? -1 : 1)),
-  });
+  };
+
+  // Store in cache for 5 minutes
+  _fullCache.set(mpId, { payload, ts: Date.now() });
+  res.json(payload);
 });
+
 
 
 // GET /api/mp/:mpId/overview - MP dashboard overview

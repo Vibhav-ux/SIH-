@@ -3,6 +3,9 @@ const { v4: uuidv4 } = require('uuid');
 const fs = require('fs');
 const path = require('path');
 
+// seedRaw = write directly to memory, NO Supabase calls (fast bulk seeding)
+const { seedRaw } = db;
+
 // ─── State → approx center coordinates ─────────────────────────────────────
 const STATE_COORDS = {
   'Andhra Pradesh':     { lat: 15.9129, lng: 79.7400 },
@@ -117,7 +120,7 @@ function generateMpData(mpId, stateName, constituency, baseLat, baseLng, allocat
   for (let i = 0; i < 2; i++) {
     const cat = pick(CATEGORIES);
     const status = propStatuses[i % propStatuses.length];
-    db.seed('proposals', `prop-${mpId}-${i}`, {
+    seedRaw('proposals', `prop-${mpId}-${i}`, {
       mpId,
       title: `${pick(TEMPLATES[cat])} - Proposed`,
       category: cat,
@@ -275,14 +278,14 @@ function seedAll() {
     { id: 'cr-002', projectId: 'pr-LS-002-0', reporterId: 'citizen-002', name: 'Sunita Devi', statusClaim: 'LESS_THAN_25_PCT', evidenceText: 'Some marking done but road work hasn\'t started.', lat: 10.85, lng: 76.27, verified: false, createdAt: '2025-01-18T14:00:00.000Z' },
     { id: 'cr-003', projectId: 'pr-LS-003-2', reporterId: 'citizen-003', name: 'Lakshmi Amma', statusClaim: 'MORE_THAN_75_PCT', evidenceText: 'Health centre is nearly done! Pharmacy is functional.', lat: 8.48, lng: 76.94, verified: true, createdAt: '2025-03-01T08:00:00.000Z' },
   ];
-  communityReports.forEach(r => db.seed('communityReports', r.id, r));
+  communityReports.forEach(r => seedRaw('communityReports', r.id, r));
 
-  // ─── External Schemes for double-funding detection ───────────────────────
+  // ─── External Schemes ─────────────────────────────────────────────────
   const externalSchemes = [
     { id: 'ext-001', scheme: 'PMGSY', title: 'Village Road — Dholka to Bavla Connectivity', lat: 22.72, lng: 72.46, budget: 3200000, startDate: '2023-10-01', endDate: '2025-03-31', state: 'Gujarat', contractor: 'Rapid Build Infrastructure' },
     { id: 'ext-002', scheme: 'AMRUT', title: 'Flood Protection Embankment — Dharmatala', lat: 22.56, lng: 88.35, budget: 2000000, startDate: '2024-01-01', endDate: '2025-05-31', state: 'West Bengal', contractor: 'Bengal Municipal Works' },
   ];
-  externalSchemes.forEach(e => db.seed('externalSchemes', e.id, e));
+  externalSchemes.forEach(e => seedRaw('externalSchemes', e.id, e));
 
   db.markSeeded();
   const mpCount = Object.keys(db.store?.mps || {}).length;
