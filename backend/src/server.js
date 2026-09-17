@@ -19,6 +19,24 @@ const PORT = process.env.PORT || 3001;
 app.use(cors({ origin: '*' }));
 app.use(express.json({ limit: '10mb' }));
 
+// ─── Global GET cache middleware (3 min TTL for heavy computed routes) ────────────
+const _routeCache = new Map();
+const ROUTE_TTL = 3 * 60 * 1000;
+function cacheMiddleware(req, res, next) {
+  if (req.method !== 'GET') return next();
+  const key = req.originalUrl;
+  const hit = _routeCache.get(key);
+  if (hit && Date.now() - hit.ts < ROUTE_TTL) {
+    return res.json(hit.data);
+  }
+  const origJson = res.json.bind(res);
+  res.json = (data) => {
+    _routeCache.set(key, { data, ts: Date.now() });
+    return origJson(data);
+  };
+  next();
+}
+
 // ─── Startup: Create tables, load from Supabase, seed if empty ──────────────
 async function startup() {
   try {
@@ -34,14 +52,14 @@ async function startup() {
   }
 }
 
-// ─── Routes ───────────────────────────────────────────────────────────────────
+// ─── Routes ───────────────────────────────────────────────────────────────
 app.use('/api/citizen', citizenRoutes);
 app.use('/api/mp', mpRoutes);
-app.use('/api/ministry', ministryRoutes);
+app.use('/api/ministry', cacheMiddleware, ministryRoutes);  // cached — heavy O(n) scans
 app.use('/api/agency', agencyRoutes);
-app.use('/api/ai', aiRoutes);
+app.use('/api/ai', cacheMiddleware, aiRoutes);              // cached — riskEngine, forecast, mpScores
 app.use('/api/audit', auditRoutes);
-app.use('/api/state', stateRoutes);
+app.use('/api/state', cacheMiddleware, stateRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({
