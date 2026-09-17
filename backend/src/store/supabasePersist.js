@@ -104,22 +104,15 @@ async function loadAll(store) {
 
 // ─── Persist a record to Supabase (fire-and-forget) ──────────────────────────
 async function saveRecord(storeKey, id, data) {
-  if (storeKey === 'mps') {
-    // MPs use the typed mps table
-    const { error } = await supabase
-      .from('mps')
-      .upsert({
-        id: data.id,
-        mp_name: data.name,
-        constituency: data.constituency,
-        state: data.state,
-        party: data.party,
-        house: data.type || data.house,
-        allocated_amount: data.totalFunds,
-        total_expenditure: data.usedFunds,
-      }, { onConflict: 'id' });
+  // Skip all writes if persistence is disabled (e.g. Vercel cold start)
+  if (process.env.DISABLE_SUPABASE_PERSIST === 'true') return;
 
-    if (error) console.error('[Supabase] MP save error:', error.message);
+  if (storeKey === 'mps') {
+    supabase.from('mps').upsert({
+      id: data.id, mp_name: data.name, constituency: data.constituency,
+      state: data.state, party: data.party, house: data.type || data.house,
+      allocated_amount: data.totalFunds, total_expenditure: data.usedFunds,
+    }, { onConflict: 'id' }).then(() => {}).catch(() => {});
     return;
   }
 
@@ -127,51 +120,32 @@ async function saveRecord(storeKey, id, data) {
   if (!supabaseTable) return;
 
   const record = {
-    id,
-    data: JSON.stringify(data),
+    id, data: JSON.stringify(data),
     updated_at: new Date().toISOString(),
   };
-
-  // Add helper columns for FK-style querying
   if (data.mpId)      record.mp_id = data.mpId;
   if (data.projectId) record.project_id = data.projectId;
 
-  supabase
-    .from(supabaseTable)
+  supabase.from(supabaseTable)
     .upsert(record, { onConflict: 'id' })
-    .then(({ error }) => {
-      if (error) console.error(`[Supabase] Save error (${storeKey}/${id}):`, error.message);
-    });
+    .then(() => {}).catch(() => {});
 }
 
 // ─── Delete a record from Supabase ───────────────────────────────────────────
 function deleteRecord(storeKey, id) {
+  if (process.env.DISABLE_SUPABASE_PERSIST === 'true') return;
   const supabaseTable = TABLE_MAP[storeKey];
   if (!supabaseTable) return;
-
-  supabase
-    .from(supabaseTable)
-    .delete()
-    .eq('id', id)
-    .then(({ error }) => {
-      if (error) console.error(`[Supabase] Delete error (${storeKey}/${id}):`, error.message);
-    });
+  supabase.from(supabaseTable).delete().eq('id', id).then(() => {}).catch(() => {});
 }
 
 // ─── Append to audit ledger ───────────────────────────────────────────────────
 function appendAudit(entry) {
-  supabase
-    .from('audit_ledger')
-    .insert({
-      table_name: entry.table,
-      record_id: entry.id,
-      action: entry.action,
-      actor: entry.actor,
-      payload: entry.payload,
-    })
-    .then(({ error }) => {
-      if (error) console.error('[Supabase] Audit error:', error.message);
-    });
+  if (process.env.DISABLE_SUPABASE_PERSIST === 'true') return;
+  supabase.from('audit_ledger').insert({
+    table_name: entry.table, record_id: entry.id,
+    action: entry.action, actor: entry.actor, payload: entry.payload,
+  }).then(() => {}).catch(() => {});
 }
 
 // ─── Count total records (to check if DB is empty) ───────────────────────────
