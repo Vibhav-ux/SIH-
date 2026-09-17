@@ -367,18 +367,19 @@ export default function CitizenPortal() {
             </div>
 
             {/* 2. Satellite Slider (Wow Factor) */}
-            <div style={{ marginBottom: 24, background: '#f8fafc', borderRadius: 12, overflow: 'hidden', border: '1px solid #e2e8f0' }}>
-              <div style={{ padding: '10px 16px', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'white' }}>
-                <span style={{ fontSize: 13, fontWeight: 700, color: '#0f172a', display: 'flex', alignItems: 'center', gap: 6 }}>
-                  🛰️ Esri Satellite Verification
+            <div style={{ marginBottom: 24, background: '#0f172a', borderRadius: 12, overflow: 'hidden', border: '1px solid #334155', boxShadow: '0 10px 25px rgba(0,0,0,0.2)' }}>
+              <div style={{ padding: '8px 16px', borderBottom: '1px solid #1e293b', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#020617' }}>
+                <span style={{ fontSize: 13, fontWeight: 700, color: '#38bdf8', display: 'flex', alignItems: 'center', gap: 6, fontFamily: 'monospace' }}>
+                  <span style={{ display: 'inline-block', width: 8, height: 8, background: '#ef4444', borderRadius: '50%', animation: 'pulse 1.5s infinite' }}></span>
+                  ISRO BHUVAN SATELLITE FEED // LIVE
                 </span>
-                <div style={{ fontSize: 11, color: '#64748b', background: '#f1f5f9', padding: '4px 10px', borderRadius: 12, fontWeight: 600 }}>
-                  Before / After Slider
+                <div style={{ fontSize: 11, color: '#94a3b8', fontFamily: 'monospace', fontWeight: 600 }}>
+                  RES: 0.25m | BAND: MULTISPECTRAL
                 </div>
               </div>
-              <div style={{ position: 'relative', height: 220, width: '100%', cursor: 'ew-resize', userSelect: 'none' }}
+              <div style={{ position: 'relative', height: 260, width: '100%', cursor: 'ew-resize', userSelect: 'none' }}
                    onMouseMove={e => {
-                     if (e.buttons !== 1) return; // Only drag when mouse is pressed
+                     if (e.buttons !== 1) return; 
                      const rect = e.currentTarget.getBoundingClientRect();
                      setSliderPos(Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100)));
                    }}
@@ -386,35 +387,57 @@ export default function CitizenPortal() {
                      const rect = e.currentTarget.getBoundingClientRect();
                      setSliderPos(Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100)));
                    }}>
+                
+                {/* HUD Overlay (Always on top) */}
+                <div style={{ position: 'absolute', top: 12, left: 12, zIndex: 10, pointerEvents: 'none', color: '#10b981', fontFamily: 'monospace', fontSize: 11, textShadow: '0 1px 2px black' }}>
+                  LAT: {selectedProject.lat?.toFixed(4) || '28.6139'}° N<br/>
+                  LNG: {selectedProject.lng?.toFixed(4) || '77.2090'}° E<br/>
+                  ELEV: 216m
+                </div>
+
+                <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', zIndex: 10, pointerEvents: 'none', width: 40, height: 40, border: '1px solid rgba(16, 185, 129, 0.4)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <div style={{ width: 2, height: 8, background: 'rgba(16, 185, 129, 0.6)', position: 'absolute', top: -4 }}></div>
+                  <div style={{ width: 2, height: 8, background: 'rgba(16, 185, 129, 0.6)', position: 'absolute', bottom: -4 }}></div>
+                  <div style={{ width: 8, height: 2, background: 'rgba(16, 185, 129, 0.6)', position: 'absolute', left: -4 }}></div>
+                  <div style={{ width: 8, height: 2, background: 'rgba(16, 185, 129, 0.6)', position: 'absolute', right: -4 }}></div>
+                  <div style={{ width: 4, height: 4, background: '#10b981', borderRadius: '50%' }}></div>
+                </div>
+
                 {/* Before Image (Barren land / old state) */}
                 <div style={{ 
                   position: 'absolute', inset: 0, 
-                  backgroundImage: 'url(https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800&q=80)', 
-                  backgroundSize: 'cover', backgroundPosition: 'center' 
+                  backgroundImage: 'url(https://images.unsplash.com/photo-1590496794008-383c8070b257?w=1000&q=80&sat=-100)', 
+                  backgroundSize: 'cover', backgroundPosition: 'center', filter: 'contrast(1.1) brightness(0.9)'
                 }}>
-                  <div style={{ position: 'absolute', bottom: 10, right: 10, background: 'rgba(0,0,0,0.6)', color: 'white', fontSize: 10, padding: '2px 8px', borderRadius: 4 }}>Dec 2024</div>
+                  <div style={{ position: 'absolute', bottom: 12, right: 12, background: 'rgba(0,0,0,0.7)', border: '1px solid #334155', color: '#e2e8f0', fontFamily: 'monospace', fontSize: 11, padding: '4px 8px', borderRadius: 4 }}>
+                    SCAN DATE: OCT 2023 (BASELINE)
+                  </div>
                 </div>
+                
                 {/* After Image (Construction in progress) */}
                 <div style={{ 
                   position: 'absolute', inset: 0, 
-                  backgroundImage: 'url(https://images.unsplash.com/photo-1541888081156-3c0f6fbc3fc8?w=800&q=80)', 
-                  backgroundSize: 'cover', backgroundPosition: 'center', 
+                  backgroundImage: 'url(https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=1000&q=80)', 
+                  backgroundSize: 'cover', backgroundPosition: 'center', filter: 'contrast(1.1) brightness(0.9)',
                   clipPath: `polygon(0 0, ${sliderPos}% 0, ${sliderPos}% 100%, 0 100%)` 
                 }}>
-                  <div style={{ position: 'absolute', bottom: 10, left: 10, background: 'rgba(0,0,0,0.6)', color: 'white', fontSize: 10, padding: '2px 8px', borderRadius: 4 }}>Latest Scan</div>
+                  <div style={{ position: 'absolute', bottom: 12, left: 12, background: 'rgba(0,0,0,0.7)', border: '1px solid #38bdf8', color: '#38bdf8', fontFamily: 'monospace', fontSize: 11, padding: '4px 8px', borderRadius: 4 }}>
+                    SCAN DATE: LATEST (LIVE)
+                  </div>
                 </div>
+                
                 {/* Slider Handle */}
                 <div style={{ 
-                  position: 'absolute', top: 0, bottom: 0, left: `${sliderPos}%`, width: 3, 
-                  background: 'white', transform: 'translateX(-50%)', boxShadow: '0 0 10px rgba(0,0,0,0.5)' 
+                  position: 'absolute', top: 0, bottom: 0, left: `${sliderPos}%`, width: 2, 
+                  background: '#38bdf8', transform: 'translateX(-50%)', boxShadow: '0 0 15px #38bdf8' 
                 }}>
                    <div style={{ 
                      position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', 
-                     width: 28, height: 28, background: 'white', borderRadius: '50%', 
+                     width: 32, height: 32, background: '#0f172a', border: '2px solid #38bdf8', borderRadius: '50%', 
                      display: 'flex', alignItems: 'center', justifyContent: 'center', 
-                     boxShadow: '0 2px 10px rgba(0,0,0,0.3)', cursor: 'ew-resize'
+                     boxShadow: '0 0 15px rgba(56, 189, 248, 0.5)', cursor: 'ew-resize'
                    }}>
-                     <span style={{ color: '#4f46e5', fontSize: 14, fontWeight: 'bold' }}>↔</span>
+                     <span style={{ color: '#38bdf8', fontSize: 16, fontWeight: 'bold' }}>↔</span>
                    </div>
                 </div>
               </div>
