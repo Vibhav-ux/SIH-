@@ -5,6 +5,7 @@ const supabaseDb = require('../store/supabaseDb');
 const { v4: uuidv4 } = require('uuid');
 const { scoreProject } = require('../services/riskEngine');
 const { forecastProject } = require('../services/forecastEngine');
+const { generateMpData } = require('../data/seed');
 
 // ============================================================
 // REAL MP DATA FROM NEON DATABASE (CSV-backed)
@@ -77,70 +78,67 @@ router.get('/neon/:mpId', async (req, res) => {
   }
 });
 
-// ============================================================
-// IN-MEMORY STORE ROUTES (Projects, proposals, alerts etc.)
-// ============================================================
-
-// Helper: Dynamically generate dummy data for an MP if they have none.
-// This ensures that clicking any real MP from the Neon DB in the frontend
-// renders a fully populated dashboard for presentation purposes.
-function ensureMpDataExists(mpId) {
+// Helper: ensure MP data exists (uses seed.js generator)
+function ensureMpDataExists(mpId, mp) {
   const projects = db.query('projects', p => p.mpId === mpId);
-  if (projects.length > 0) return; // Data already exists
-
-  const mp = db.getById('mps', mpId) || supabaseDb.getMpById(mpId);
-  const state = mp?.state || 'Unknown State';
-  const agencies = db.getAll('agencies');
-  const baseAgency = agencies.length > 0 ? agencies[Math.floor(Math.random() * agencies.length)].id : 'ag-001';
-
-  const categories = ['ROADS', 'WATER', 'EDUCATION', 'HEALTH', 'COMMUNITY'];
-  const baseLat = 22.0 + Math.random() * 5;
-  const baseLng = 78.0 + Math.random() * 5;
-
-  // Generate 5-8 random projects
-  const numProjects = 5 + Math.floor(Math.random() * 4);
-  for (let i = 0; i < numProjects; i++) {
-    const budget = 1000000 + Math.floor(Math.random() * 4000000);
-    const disbursed = Math.floor(budget * (Math.random() * 0.9 + 0.1));
-    const isCompleted = Math.random() > 0.6;
-    
-    db.seed('projects', uuidv4(), {
-      mpId,
-      agencyId: baseAgency,
-      title: `${categories[i % categories.length]} Development - Phase ${i + 1}`,
-      category: categories[i % categories.length],
-      state,
-      district: mp?.constituency || 'Local District',
-      lat: baseLat + (Math.random() - 0.5) * 0.1,
-      lng: baseLng + (Math.random() - 0.5) * 0.1,
-      budget,
-      disbursed: isCompleted ? budget : disbursed,
-      status: isCompleted ? 'COMPLETED' : (Math.random() > 0.8 ? 'STALLED' : 'IN_PROGRESS'),
-      completionPct: isCompleted ? 100 : Math.floor(Math.random() * 80 + 10),
-      startDate: `2023-0${Math.floor(Math.random() * 9) + 1}-01`,
-      endDate: `2025-0${Math.floor(Math.random() * 9) + 1}-28`,
-      description: 'Standard infrastructure improvement project generated for dashboard presentation.',
-      riskScore: Math.floor(Math.random() * 100),
-      lapseRisk: Math.random() > 0.8,
-    });
-  }
-
-  // Generate 1-2 proposals
-  for (let i = 0; i < 2; i++) {
-    db.seed('proposals', uuidv4(), {
-      mpId,
-      title: `Proposed ${categories[Math.floor(Math.random() * categories.length)]} Expansion`,
-      category: categories[Math.floor(Math.random() * categories.length)],
-      estimatedBudget: 2500000 + Math.floor(Math.random() * 2000000),
-      description: 'Requested fund allocation for expanding local infrastructure.',
-      lat: baseLat + 0.05,
-      lng: baseLng - 0.05,
-      status: i === 0 ? 'PENDING' : (Math.random() > 0.5 ? 'APPROVED' : 'REJECTED'),
-      submittedAt: new Date().toISOString(),
-      ministerRemarks: i === 0 ? null : 'Reviewed by oversight committee.',
-    });
-  }
+  if (projects.length > 0) return;
+  const state = mp?.state || 'India';
+  const constituency = mp?.constituency || 'Constituency';
+  const lat = mp?.lat || 22.0 + Math.random() * 5;
+  const lng = mp?.lng || 78.0 + Math.random() * 5;
+  generateMpData(mpId, state, constituency, lat, lng);
 }
+
+// GET /api/mp/:mpId/full — Combined endpoint: overview + projects + proposals + alerts in ONE request
+router.get('/:mpId/full', async (req, res) => {
+  const { mpId } = req.params;
+  let mp = db.getById('mps', mpId);
+  if (!mp) return res.status(404).json({ error: 'MP not found' });
+
+  ensureMpDataExists(mpId, mp);
+
+  const projects = db.query('projects', p => p.mpId === mpId);
+  const proposals = db.query('proposals', p => p.mpId === mpId);
+  const agencies = db.getAll('agencies');
+
+  const enrichedProjects = projects.map(p => ({
+    ...p,
+    agencyName: agencies.find(a => a.id === p.agencyId)?.name || p.agencyId,
+    riskLevel: p.riskScore >= 70 ? 'HIGH' : p.riskScore >= 40 ? 'MEDIUM' : 'LOW',
+    forecast: forecastProject(p),
+  }));
+
+  const totalBudget = projects.reduce((s, p) => s + p.budget, 0);
+  const totalDisbursed = projects.reduce((s, p) => s + p.disbursed, 0);
+  const utilizationRate = mp.utilizationPercentage || Math.round((totalDisbursed / (totalBudget || 1)) * 100);
+
+  const alerts = [];
+  projects.forEach(p => {
+    if (p.riskScore >= 70) alerts.push({ type: 'HIGH_RISK', projectId: p.id, title: p.title, message: `Project "${p.title}" has a risk score of ${p.riskScore}/100`, severity: 'HIGH' });
+    if (p.lapseRisk) alerts.push({ type: 'LAPSE_RISK', projectId: p.id, title: p.title, message: `Project "${p.title}" is at risk of fund lapse before ${p.endDate}`, severity: 'CRITICAL' });
+    if (p.duplicateFlag) alerts.push({ type: 'DUPLICATE_ALERT', projectId: p.id, title: p.title, message: `Project "${p.title}" may be a duplicate`, severity: 'HIGH' });
+  });
+
+  res.json({
+    mp,
+    stats: {
+      totalProjects: mp.completedWorksCount !== undefined ? (mp.completedWorksCount + mp.recommendedWorksCount) : projects.length,
+      completedProjects: mp.completedWorksCount !== undefined ? mp.completedWorksCount : projects.filter(p => p.status === 'COMPLETED').length,
+      inProgressProjects: projects.filter(p => p.status === 'IN_PROGRESS').length,
+      stalledProjects: projects.filter(p => p.status === 'STALLED').length,
+      totalBudget: mp.totalFunds || totalBudget,
+      totalDisbursed: mp.usedFunds || totalDisbursed,
+      utilizationRate,
+      remainingFunds: mp.unspentAmount !== undefined ? mp.unspentAmount : (mp.totalFunds - mp.usedFunds),
+      completionRate: mp.completionRate || 0,
+      paymentGapPercentage: mp.paymentGapPercentage || 0,
+    },
+    projects: enrichedProjects,
+    proposals,
+    alerts: alerts.sort((a, b) => (a.severity === 'CRITICAL' ? -1 : 1)),
+  });
+});
+
 
 // GET /api/mp/:mpId/overview - MP dashboard overview
 router.get('/:mpId/overview', async (req, res) => {

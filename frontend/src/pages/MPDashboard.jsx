@@ -35,18 +35,18 @@ export default function MPDashboard() {
 
   useEffect(() => {
     setLoading(true);
-    Promise.all([
-      mpApi.getOverview(mpId),
-      mpApi.getProjects(mpId),
-      mpApi.getProposals(mpId),
-      mpApi.getAlerts(mpId),
-    ]).then(([ov, pr, prop, al]) => {
-      setOverview(ov);
-      setProjects(pr);
-      setProposals(prop);
-      setAlerts(al);
-    }).catch(console.error).finally(() => setLoading(false));
+    mpApi.getFull(mpId)
+      .then(({ mp: _mp, stats: _stats, projects: pr, proposals: prop, alerts: al }) => {
+        // getFull returns mp + stats + projects + proposals + alerts in one shot
+        setOverview({ mp: _mp, stats: _stats });
+        setProjects(pr);
+        setProposals(prop);
+        setAlerts(al);
+      })
+      .catch(console.error)
+      .finally(() => setLoading(false));
   }, [mpId]);
+
 
   async function handleProposal(e) {
     e.preventDefault();

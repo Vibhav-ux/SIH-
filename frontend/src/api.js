@@ -58,6 +58,7 @@ export const mpApi = {
   getNeonMp: (mpId) => cached(`mp/neon/${mpId}`, () => req(`/mp/neon/${mpId}`), 120_000),
 
   // Project data (in-memory store, persisted to Neon)
+  getFull: (mpId) => req(`/mp/${mpId}/full`),       // ← single combined call
   getOverview: (mpId) => req(`/mp/${mpId}/overview`),
   getProjects: (mpId) => req(`/mp/${mpId}/projects`),
   getProposals: (mpId) => req(`/mp/${mpId}/proposals`),
