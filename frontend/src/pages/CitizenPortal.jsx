@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { citizenApi, aiApi, formatCurrency } from '../api';
 import StatCard from '../components/StatCard';
 import ProjectCard from '../components/ProjectCard';
@@ -118,11 +119,11 @@ export default function CitizenPortal() {
                 </h2>
                 <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: '4px 0 0' }}>Top performers — transparent, data-driven, same formula for all</p>
               </div>
-              <a href="/mp-scores" style={{
+              <Link to="/app/mp-scores" style={{
                 padding: '8px 16px', borderRadius: 8,
                 background: '#eef2ff', border: '1px solid #c7d2fe',
                 color: '#4f46e5', fontSize: 13, fontWeight: 600, textDecoration: 'none',
-              }}>View All →</a>
+              }}>View All →</Link>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12 }}>
               {mpScores.map(mp => (
