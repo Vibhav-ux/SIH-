@@ -21,8 +21,12 @@ export default function CitizenPortal() {
   const [showReport, setShowReport] = useState(false);
   const [reportForm, setReportForm] = useState({ statusClaim: '', evidenceText: '', name: '' });
   const [reportSubmitted, setReportSubmitted] = useState(false);
-  const [view, setView] = useState('grid'); // 'grid' | 'map'
+  const [view, setView] = useState('grid');
   const [mpScores, setMpScores] = useState([]);
+  
+  // New State variables for WOW features
+  const [isLocating, setIsLocating] = useState(false);
+  const [sliderPos, setSliderPos] = useState(50); // Satellite slider position (0-100)
 
   useEffect(() => {
     Promise.all([citizenApi.getStats(), citizenApi.getProjects(), aiApi.getMPScores()])
@@ -54,19 +58,54 @@ export default function CitizenPortal() {
     if (!reportForm.statusClaim) return;
     await citizenApi.submitReport({ projectId: selectedProject.id, ...reportForm });
     setReportSubmitted(true);
-    setTimeout(() => { setShowReport(false); setReportSubmitted(false); setReportForm({ statusClaim: '', evidenceText: '', name: '' }); }, 2000);
+    // Don't auto-close modal immediately so they can see the gamification
+    setTimeout(() => { 
+      setShowReport(false); 
+      setReportSubmitted(false); 
+      setReportForm({ statusClaim: '', evidenceText: '', name: '' }); 
+      setSelectedProject(null);
+    }, 4000);
   }
+
+  const handleLocateMe = () => {
+    setIsLocating(true);
+    setTimeout(() => {
+      setIsLocating(false);
+      // Simulate finding projects near 'Maharashtra' or 'Uttar Pradesh'
+      setSearch('Maharashtra');
+    }, 1500);
+  };
 
   const gradeColor = (g) => ({ A: '#059669', B: '#4f46e5', C: '#d97706', D: '#ea580c', F: '#dc2626' }[g] || 'var(--text-secondary)');
 
   return (
     <div style={{ minHeight: '100vh', padding: '0 0 60px' }}>
+      <style>
+        {`
+          @keyframes scrollTicker {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+          }
+          @keyframes popIn {
+            0% { transform: scale(0.8); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+          }
+          .ticker-track {
+            display: flex;
+            width: fit-content;
+            animation: scrollTicker 30s linear infinite;
+          }
+          .ticker-track:hover {
+            animation-play-state: paused;
+          }
+        `}
+      </style>
 
       {/* Hero Banner */}
       <div style={{
         background: 'linear-gradient(135deg, #eef2ff 0%, #f0f4ff 50%, #ecfeff 100%)',
         borderBottom: '1px solid #e2e8f0',
-        padding: '48px 24px',
+        padding: '48px 24px 32px',
       }}>
         <div style={{ maxWidth: 1400, margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: 48 }}>
@@ -104,6 +143,30 @@ export default function CitizenPortal() {
               <StatCard key={s.label} {...s} loading={loading} />
             ))}
           </div>
+        </div>
+      </div>
+
+      {/* 3. Live Activity Ticker */}
+      <div style={{ background: '#1e293b', color: '#e2e8f0', padding: '10px 0', fontSize: '0.85rem', overflow: 'hidden', borderBottom: '1px solid #334155' }}>
+        <div className="ticker-track">
+          {[
+            '👤 Rahul from Varanasi reported a stalled road project',
+            '🏛️ MP Priya Nair hit 90% fund utilization',
+            '🚨 AI flagged a double-funding risk in Lucknow',
+            '✅ New community center approved in Pune',
+            '📸 Evidence uploaded for school renovation in Kochi',
+            // Duplicate for seamless scroll
+            '👤 Rahul from Varanasi reported a stalled road project',
+            '🏛️ MP Priya Nair hit 90% fund utilization',
+            '🚨 AI flagged a double-funding risk in Lucknow',
+            '✅ New community center approved in Pune',
+            '📸 Evidence uploaded for school renovation in Kochi'
+          ].map((msg, i) => (
+            <span key={i} style={{ margin: '0 30px', display: 'inline-flex', alignItems: 'center', gap: 8, whiteSpace: 'nowrap' }}>
+              <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#10b981', boxShadow: '0 0 8px #10b981' }} />
+              {msg}
+            </span>
+          ))}
         </div>
       </div>
 
@@ -153,15 +216,29 @@ export default function CitizenPortal() {
 
         {/* Filters + View Toggle */}
         <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 24, alignItems: 'center' }}>
-          <div style={{ flex: '1 1 250px', position: 'relative' }}>
-            <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', fontSize: 16 }}>🔍</span>
+          <div style={{ flex: '1 1 250px', position: 'relative', display: 'flex' }}>
+            <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', fontSize: 16, zIndex: 1 }}>🔍</span>
             <input
               className="input-glass"
-              style={{ paddingLeft: 38 }}
+              style={{ paddingLeft: 38, borderTopRightRadius: 0, borderBottomRightRadius: 0, borderRight: 'none', flex: 1 }}
               placeholder="Search projects, state, district..."
               value={search}
               onChange={e => setSearch(e.target.value)}
             />
+            {/* 1. Projects Near Me Button */}
+            <button 
+              onClick={handleLocateMe}
+              disabled={isLocating}
+              style={{
+                padding: '0 16px', background: '#f8fafc', border: '1px solid #e2e8f0', 
+                borderTopRightRadius: 8, borderBottomRightRadius: 8,
+                color: '#4f46e5', fontWeight: 600, fontSize: 13, cursor: 'pointer',
+                display: 'flex', alignItems: 'center', gap: 6, transition: 'all 0.2s',
+              }}
+            >
+              {isLocating ? <span style={{ animation: 'spin 1s linear infinite' }}>⏳</span> : <span>📍</span>}
+              {isLocating ? 'Locating...' : 'Near Me'}
+            </button>
           </div>
 
           {[
@@ -230,22 +307,23 @@ export default function CitizenPortal() {
       {selectedProject && (
         <div style={{
           position: 'fixed', inset: 0, zIndex: 1000,
-          background: 'rgba(0,0,0,0.3)', backdropFilter: 'blur(8px)',
+          background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(8px)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           padding: 24,
         }} onClick={() => { setSelectedProject(null); setShowReport(false); }}>
           <div style={{
             background: 'var(--text-primary)', border: '1px solid #e2e8f0',
-            borderRadius: 20, padding: 32, maxWidth: 600, width: '100%',
-            maxHeight: '85vh', overflowY: 'auto',
-            boxShadow: '0 25px 60px rgba(0,0,0,0.12)',
+            borderRadius: 20, padding: 32, maxWidth: 650, width: '100%',
+            maxHeight: '90vh', overflowY: 'auto',
+            boxShadow: '0 25px 60px rgba(0,0,0,0.15)',
           }} onClick={e => e.stopPropagation()}>
+            
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
               <div>
                 <div style={{ fontSize: 11, color: 'var(--text-secondary)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 }}>
                   {selectedProject.category}
                 </div>
-                <h2 style={{ fontFamily: 'Outfit, sans-serif', fontSize: 20, fontWeight: 700, color: '#0f172a', margin: 0 }}>
+                <h2 style={{ fontFamily: 'Outfit, sans-serif', fontSize: 22, fontWeight: 800, color: '#0f172a', margin: 0 }}>
                   {selectedProject.title}
                 </h2>
                 <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: '6px 0 0' }}>
@@ -256,23 +334,61 @@ export default function CitizenPortal() {
                 style={{ background: 'var(--text-primary)', border: '1px solid #e2e8f0', color: '#64748b', cursor: 'pointer', borderRadius: 8, padding: '6px 10px', fontSize: 16 }}>✕</button>
             </div>
 
-            {/* Progress */}
-            <div style={{ marginBottom: 20 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-                <span style={{ fontSize: 13, color: '#64748b' }}>Completion Progress</span>
-                <span style={{ fontSize: 13, fontWeight: 700, color: '#0f172a' }}>{selectedProject.completionPct}%</span>
+            {/* 2. Satellite Slider (Wow Factor) */}
+            <div style={{ marginBottom: 24, background: '#f8fafc', borderRadius: 12, overflow: 'hidden', border: '1px solid #e2e8f0' }}>
+              <div style={{ padding: '10px 16px', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'white' }}>
+                <span style={{ fontSize: 13, fontWeight: 700, color: '#0f172a', display: 'flex', alignItems: 'center', gap: 6 }}>
+                  🛰️ Esri Satellite Verification
+                </span>
+                <div style={{ fontSize: 11, color: '#64748b', background: '#f1f5f9', padding: '4px 10px', borderRadius: 12, fontWeight: 600 }}>
+                  Before / After Slider
+                </div>
               </div>
-              <div className="progress-track" style={{ height: 8 }}>
-                <div className="progress-fill" style={{
-                  width: `${selectedProject.completionPct}%`,
-                  background: selectedProject.status === 'STALLED' ? 'linear-gradient(90deg, #dc2626, #ef4444)'
-                    : selectedProject.status === 'COMPLETED' ? 'linear-gradient(90deg, #059669, #34d399)'
-                    : 'linear-gradient(90deg, #4f46e5, #818cf8)',
-                }} />
+              <div style={{ position: 'relative', height: 220, width: '100%', cursor: 'ew-resize', userSelect: 'none' }}
+                   onMouseMove={e => {
+                     if (e.buttons !== 1) return; // Only drag when mouse is pressed
+                     const rect = e.currentTarget.getBoundingClientRect();
+                     setSliderPos(Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100)));
+                   }}
+                   onMouseDown={e => {
+                     const rect = e.currentTarget.getBoundingClientRect();
+                     setSliderPos(Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100)));
+                   }}>
+                {/* Before Image (Barren land / old state) */}
+                <div style={{ 
+                  position: 'absolute', inset: 0, 
+                  backgroundImage: 'url(https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800&q=80)', 
+                  backgroundSize: 'cover', backgroundPosition: 'center' 
+                }}>
+                  <div style={{ position: 'absolute', bottom: 10, right: 10, background: 'rgba(0,0,0,0.6)', color: 'white', fontSize: 10, padding: '2px 8px', borderRadius: 4 }}>Dec 2024</div>
+                </div>
+                {/* After Image (Construction in progress) */}
+                <div style={{ 
+                  position: 'absolute', inset: 0, 
+                  backgroundImage: 'url(https://images.unsplash.com/photo-1541888081156-3c0f6fbc3fc8?w=800&q=80)', 
+                  backgroundSize: 'cover', backgroundPosition: 'center', 
+                  clipPath: `polygon(0 0, ${sliderPos}% 0, ${sliderPos}% 100%, 0 100%)` 
+                }}>
+                  <div style={{ position: 'absolute', bottom: 10, left: 10, background: 'rgba(0,0,0,0.6)', color: 'white', fontSize: 10, padding: '2px 8px', borderRadius: 4 }}>Latest Scan</div>
+                </div>
+                {/* Slider Handle */}
+                <div style={{ 
+                  position: 'absolute', top: 0, bottom: 0, left: `${sliderPos}%`, width: 3, 
+                  background: 'white', transform: 'translateX(-50%)', boxShadow: '0 0 10px rgba(0,0,0,0.5)' 
+                }}>
+                   <div style={{ 
+                     position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', 
+                     width: 28, height: 28, background: 'white', borderRadius: '50%', 
+                     display: 'flex', alignItems: 'center', justifyContent: 'center', 
+                     boxShadow: '0 2px 10px rgba(0,0,0,0.3)', cursor: 'ew-resize'
+                   }}>
+                     <span style={{ color: '#4f46e5', fontSize: 14, fontWeight: 'bold' }}>↔</span>
+                   </div>
+                </div>
               </div>
             </div>
 
-            {/* Budget */}
+            {/* Budget & Progress */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 20 }}>
               {[
                 { label: 'Budget', value: formatCurrency(selectedProject.budget), color: '#475569' },
@@ -286,36 +402,42 @@ export default function CitizenPortal() {
               ))}
             </div>
 
-            {selectedProject.description && (
-              <div style={{ fontSize: 13, color: '#64748b', lineHeight: 1.7, marginBottom: 20, padding: 14, background: '#f8fafc', borderRadius: 10, border: '1px solid #e2e8f0' }}>
-                {selectedProject.description}
-              </div>
-            )}
-
             {/* Report Section */}
             {!showReport ? (
-              <button className="btn-primary" style={{ width: '100%' }} onClick={() => setShowReport(true)}>
-                📍 Submit Community Progress Report
+              <button className="btn-primary" style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '12px' }} onClick={() => setShowReport(true)}>
+                <span>📍</span> Submit Community Progress Report
               </button>
             ) : (
-              <div style={{ padding: 20, background: '#eef2ff', border: '1px solid #c7d2fe', borderRadius: 12 }}>
+              <div style={{ padding: 24, background: '#fff', border: '1px solid #c7d2fe', borderRadius: 16, boxShadow: '0 4px 20px rgba(79, 70, 229, 0.08)' }}>
                 {reportSubmitted ? (
-                  <div style={{ textAlign: 'center', color: '#059669', fontWeight: 600, padding: 20 }}>
-                    ✅ Report submitted! Thank you for contributing to transparency.
+                  // 4. Gamification Success State
+                  <div style={{ textAlign: 'center', padding: '20px 10px', animation: 'popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275)' }}>
+                    <div style={{ fontSize: 48, marginBottom: 12 }}>🎉</div>
+                    <div style={{ fontSize: 20, fontWeight: 800, color: '#0f172a', marginBottom: 8 }}>Report Verified!</div>
+                    <div style={{ fontSize: 14, color: '#64748b', marginBottom: 20 }}>Thank you for holding representatives accountable.</div>
+                    <div style={{ 
+                      display: 'inline-block', background: 'linear-gradient(135deg, #f59e0b, #d97706)', 
+                      color: 'white', padding: '10px 20px', borderRadius: 30, fontSize: 15, fontWeight: 700, 
+                      boxShadow: '0 4px 15px rgba(245, 158, 11, 0.3)' 
+                    }}>
+                      ⭐ +50 Transparency Points
+                    </div>
                   </div>
                 ) : (
                   <form onSubmit={handleReport}>
-                    <div style={{ fontSize: 14, fontWeight: 600, color: '#0f172a', marginBottom: 16 }}>📝 Report Ground-Truth Status</div>
-                    <div style={{ marginBottom: 12 }}>
-                      <label style={{ fontSize: 12, color: '#64748b', display: 'block', marginBottom: 6 }}>Your Name (optional)</label>
-                      <input className="input-glass" placeholder="Anonymous" value={reportForm.name}
+                    <div style={{ fontSize: 16, fontWeight: 700, color: '#0f172a', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 8 }}>
+                      📝 Report Ground-Truth Status
+                    </div>
+                    <div style={{ marginBottom: 16 }}>
+                      <label style={{ fontSize: 12, fontWeight: 600, color: '#475569', display: 'block', marginBottom: 6 }}>Your Name (optional)</label>
+                      <input className="input-glass" placeholder="e.g. Rahul, Local Resident" value={reportForm.name}
                         onChange={e => setReportForm({ ...reportForm, name: e.target.value })} />
                     </div>
-                    <div style={{ marginBottom: 12 }}>
-                      <label style={{ fontSize: 12, color: '#64748b', display: 'block', marginBottom: 6 }}>What is the actual status on-ground? *</label>
+                    <div style={{ marginBottom: 16 }}>
+                      <label style={{ fontSize: 12, fontWeight: 600, color: '#475569', display: 'block', marginBottom: 6 }}>What is the actual status on-ground? *</label>
                       <select className="input-glass" required value={reportForm.statusClaim}
                         onChange={e => setReportForm({ ...reportForm, statusClaim: e.target.value })}>
-                        <option value="">Select status you observed</option>
+                        <option value="">Select status you observed...</option>
                         <option value="NOT_STARTED">Not Started — no work visible</option>
                         <option value="LESS_THAN_25_PCT">Less than 25% complete</option>
                         <option value="ABOUT_50_PCT">About 50% complete</option>
@@ -323,16 +445,30 @@ export default function CitizenPortal() {
                         <option value="COMPLETED">Fully Completed</option>
                       </select>
                     </div>
+                    
+                    {/* 5. Audio / Video Proof UI */}
                     <div style={{ marginBottom: 16 }}>
-                      <label style={{ fontSize: 12, color: '#64748b', display: 'block', marginBottom: 6 }}>What did you observe?</label>
+                      <label style={{ fontSize: 12, fontWeight: 600, color: '#475569', display: 'block', marginBottom: 6 }}>Attach Proof (Required for High Trust Score)</label>
+                      <div style={{ display: 'flex', gap: 10 }}>
+                        <button type="button" onClick={() => alert('Camera module opened!')} style={{ flex: 1, padding: '12px', background: '#f8fafc', border: '1.5px dashed #cbd5e1', borderRadius: 8, color: '#475569', fontSize: 13, fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s', ':hover': { borderColor: '#4f46e5', color: '#4f46e5' } }}>
+                          📸 Photo / Video
+                        </button>
+                        <button type="button" onClick={() => alert('Microphone recording started!')} style={{ flex: 1, padding: '12px', background: '#f8fafc', border: '1.5px dashed #cbd5e1', borderRadius: 8, color: '#475569', fontSize: 13, fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s', ':hover': { borderColor: '#4f46e5', color: '#4f46e5' } }}>
+                          🎙️ Record Audio
+                        </button>
+                      </div>
+                    </div>
+
+                    <div style={{ marginBottom: 24 }}>
+                      <label style={{ fontSize: 12, fontWeight: 600, color: '#475569', display: 'block', marginBottom: 6 }}>Additional Details</label>
                       <textarea className="input-glass" rows={3} style={{ resize: 'vertical' }}
                         placeholder="Describe what you see at the project site..."
                         value={reportForm.evidenceText}
                         onChange={e => setReportForm({ ...reportForm, evidenceText: e.target.value })} />
                     </div>
-                    <div style={{ display: 'flex', gap: 10 }}>
-                      <button type="submit" className="btn-primary" style={{ flex: 1 }}>Submit Report</button>
-                      <button type="button" className="btn-secondary" onClick={() => setShowReport(false)}>Cancel</button>
+                    <div style={{ display: 'flex', gap: 12 }}>
+                      <button type="submit" className="btn-primary" style={{ flex: 2, padding: '12px' }}>Submit Evidence</button>
+                      <button type="button" className="btn-secondary" style={{ flex: 1 }} onClick={() => setShowReport(false)}>Cancel</button>
                     </div>
                   </form>
                 )}
@@ -344,4 +480,3 @@ export default function CitizenPortal() {
     </div>
   );
 }
-

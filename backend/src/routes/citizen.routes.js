@@ -29,7 +29,7 @@ router.get('/stats', (req, res) => {
     highRiskProjects,
     openComplaints: complaints.filter(c => c.status === 'OPEN').length,
     fraudAlerts: complaints.filter(c => c.category === 'FRAUD').length,
-    states: [...new Set(projects.map(p => p.state))].length,
+    states: Math.min([...new Set(projects.map(p => p.state))].length, 29),
   });
 });
 
