@@ -30,16 +30,23 @@ async function req(path, options = {}) {
 
 // Citizen API
 export const citizenApi = {
-  getStats: () => req('/citizen/stats'),
+  // Single combined call — stats + first 60 projects in one request
+  getSummary: () => cached('citizen/summary', () => req('/citizen/summary'), 90_000),
+  getStats: () => cached('citizen/stats', () => req('/citizen/stats'), 90_000),
   getProjects: (filters = {}) => {
-    const params = new URLSearchParams(filters).toString();
+    const params = new URLSearchParams({ limit: 60, ...filters }).toString();
     return req(`/citizen/projects${params ? '?' + params : ''}`);
+  },
+  getMoreProjects: (page, filters = {}) => {
+    const params = new URLSearchParams({ page, limit: 60, ...filters }).toString();
+    return req(`/citizen/projects?${params}`);
   },
   getProject: (id) => req(`/citizen/projects/${id}`),
   getMPs: () => req('/citizen/mps'),
   submitReport: (data) => req('/citizen/report', { method: 'POST', body: data }),
   submitComplaint: (data) => req('/citizen/complaint', { method: 'POST', body: data }),
 };
+
 
 // MP API — includes both real-MP (Neon) and project-data endpoints
 export const mpApi = {

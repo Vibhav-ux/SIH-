@@ -30,16 +30,22 @@ export default function CitizenPortal() {
   const [userLocation, setUserLocation] = useState(null);
 
   useEffect(() => {
-    Promise.all([citizenApi.getStats(), citizenApi.getProjects(), aiApi.getMPScores()])
-      .then(([s, p, ms]) => {
-        setStats(s);
+    // Single combined call instead of 3 separate ones
+    citizenApi.getSummary()
+      .then(({ stats, projects: p, total }) => {
+        setStats(stats);
         setProjects(p);
         setFiltered(p);
-        setMpScores(ms.scores?.slice(0, 5) || []);
         setLoading(false);
       })
       .catch(console.error);
+
+    // MP scores load separately in background (non-blocking)
+    aiApi.getMPScores()
+      .then(ms => setMpScores(ms.scores?.slice(0, 5) || []))
+      .catch(() => {});
   }, []);
+
 
   useEffect(() => {
     let result = [...projects];
