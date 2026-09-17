@@ -131,7 +131,7 @@ router.get('/:mpId/full', async (req, res) => {
     if (p.duplicateFlag) alerts.push({ type: 'DUPLICATE_ALERT', projectId: p.id, title: p.title, message: `Project "${p.title}" may be a duplicate`, severity: 'HIGH' });
   });
 
-  res.json({
+  const payload = {
     mp,
     stats: {
       totalProjects: mp.completedWorksCount !== undefined ? (mp.completedWorksCount + mp.recommendedWorksCount) : projects.length,
@@ -150,10 +150,10 @@ router.get('/:mpId/full', async (req, res) => {
     alerts: alerts.sort((a, b) => (a.severity === 'CRITICAL' ? -1 : 1)),
   };
 
-  // Store in cache for 5 minutes
   _fullCache.set(mpId, { payload, ts: Date.now() });
   res.json(payload);
 });
+
 
 
 
