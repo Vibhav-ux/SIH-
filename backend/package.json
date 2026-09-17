@@ -5,8 +5,11 @@
   "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",
-    "dev": "nodemon src/server.js"
+    "dev": "nodemon src/server.js",
+    "prebuild": "node src/scripts/prebuild-seed.js",
+    "build": "node src/scripts/prebuild-seed.js"
   },
+
   "dependencies": {
     "@neon/config": "^1.4.2",
     "@neon/env": "^1.3.2",
