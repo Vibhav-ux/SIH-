@@ -2,7 +2,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 
 const ROLES = [
-  { id: 'citizen',  label: 'Citizen Portal',     icon: '🏘️', color: '#138808' },
+  { id: 'citizen',  label: 'Public Tracker',     icon: '🏘️', color: '#138808' },
   { id: 'mp',       label: 'MP Dashboard',        icon: '🏛️', color: '#ff9933' },
   { id: 'ministry', label: 'Ministry',            icon: '🏢', color: '#f59e0b' },
   { id: 'state',    label: 'State Nodal',         icon: '🗺️', color: '#e07820' },
@@ -29,7 +29,7 @@ export default function Navbar({ role, setRole, activeId, setActiveId }) {
   const mpState = localStorage.getItem('mplad_mp_state') || '';
 
   const navLinks = [
-    { to: '/app/', label: 'Citizen Portal', icon: '🏘️', roles: ['citizen'] },
+    { to: '/app/', label: 'Public Tracker', icon: '🔍', roles: ['citizen'] },
     { to: '/app/mp', label: 'MP Dashboard', icon: '📊', roles: ['mp'] },
     { to: '/app/mp-directory', label: 'MP Directory', icon: '👥', roles: ['mp', 'ministry', 'citizen', 'state'] },
     { to: '/app/ministry', label: 'Ministry', icon: '🏢', roles: ['ministry'] },

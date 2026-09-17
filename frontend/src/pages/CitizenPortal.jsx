@@ -147,7 +147,7 @@ export default function CitizenPortal() {
               background: '#eef2ff', border: '1px solid #c7d2fe',
               fontSize: 12, fontWeight: 600, color: '#4f46e5', marginBottom: 20,
             }}>
-              🇮🇳 Public Transparency Portal • No Login Required
+              🇮🇳 Citizen Public Tracker • No Login Required
             </div>
             <h1 style={{
               fontFamily: 'Outfit, sans-serif', fontSize: 'clamp(32px, 5vw, 56px)',
