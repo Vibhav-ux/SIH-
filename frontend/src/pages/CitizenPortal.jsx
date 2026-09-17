@@ -67,37 +67,48 @@ export default function CitizenPortal() {
   }
 
 
+  // ─── Search/Filter: backend-powered when filters active, local otherwise ────
   useEffect(() => {
-    let result = [...projects];
-    if (search) {
-      const q = search.toLowerCase();
-      result = result.filter(p =>
-        p.title.toLowerCase().includes(q) ||
-        p.state?.toLowerCase().includes(q) ||
-        p.district?.toLowerCase().includes(q)
-      );
-    }
-    if (filterCategory) result = result.filter(p => p.category === filterCategory);
-    if (filterStatus) result = result.filter(p => p.status === filterStatus);
-    if (filterRisk) result = result.filter(p => p.riskLevel === filterRisk);
+    const hasFilter = search || filterCategory || filterStatus || filterRisk;
 
-    if (userLocation) {
-      const getDistance = (lat1, lon1, lat2, lon2) => {
-        const R = 6371; // km
-        const dLat = (lat2 - lat1) * Math.PI / 180;
-        const dLon = (lon2 - lon1) * Math.PI / 180;
-        const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon/2) * Math.sin(dLon/2);
-        return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-      };
-      
-      result = result.map(p => ({
-        ...p,
-        distance: getDistance(userLocation.lat, userLocation.lng, p.lat, p.lng)
-      })).sort((a, b) => a.distance - b.distance).slice(0, 30);
+    if (!hasFilter) {
+      // No filters — just show all locally loaded projects
+      let result = [...projects];
+      if (userLocation) {
+        const dist = (lat1, lng1, lat2, lng2) => {
+          const R = 6371;
+          const dLat = (lat2 - lat1) * Math.PI / 180;
+          const dLon = (lng2 - lng1) * Math.PI / 180;
+          const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
+          return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        };
+        result = result.map(p => ({ ...p, distance: dist(userLocation.lat, userLocation.lng, p.lat, p.lng) }))
+          .sort((a, b) => a.distance - b.distance).slice(0, 30);
+      }
+      setFiltered(result);
+      return;
     }
 
-    setFiltered(result);
+    // Has filter — search entire dataset on backend with debounce
+    const timer = setTimeout(async () => {
+      const params = {};
+      if (search) params.search = search;
+      if (filterCategory) params.category = filterCategory;
+      if (filterStatus) params.status = filterStatus;
+      if (filterRisk) params.risk = filterRisk;
+      params.limit = 200; // return up to 200 matches
+
+      try {
+        const data = await citizenApi.getProjects(params);
+        const results = data.projects || data;
+        setFiltered(results);
+        setTotalProjects(data.total || results.length);
+      } catch (e) { console.error(e); }
+    }, 350);
+
+    return () => clearTimeout(timer);
   }, [search, filterCategory, filterStatus, filterRisk, projects, userLocation]);
+
 
   async function handleReport(e) {
     e.preventDefault();
