@@ -20,6 +20,21 @@ import AlertCenter from './pages/AlertCenter';
 import MPDirectory from './pages/MPDirectory';
 import NirikshanBot from './components/NirikshanBot';
 
+const RoleRoute = ({ role, allowedRoles, children }) => {
+  if (!allowedRoles.includes(role)) {
+    const roleRoutes = {
+      'citizen': '/app/',
+      'mp': '/app/mp',
+      'ministry': '/app/ministry',
+      'state': '/app/state',
+      'district': '/app/district',
+      'agency': '/app/agency',
+    };
+    return <Navigate to={roleRoutes[role] || '/app/'} replace />;
+  }
+  return children;
+};
+
 export default function App() {
   const [role, setRole] = useState(() => localStorage.getItem('mplad_role') || 'citizen');
   const [activeId, setActiveId] = useState(() => localStorage.getItem('mplad_mp_id') || 'mp-001');
@@ -57,20 +72,20 @@ export default function App() {
           <>
             <Navbar role={role} setRole={handleRoleChange} activeId={activeId} setActiveId={handleIdChange} />
             <Routes>
-              <Route path="/" element={<CitizenPortal />} />
-              <Route path="/mp" element={<MPDashboard mpId={activeId} />} />
-              <Route path="/ministry" element={<MinistryDashboard />} />
-              <Route path="/agency" element={<AgencyDashboard agencyId={activeId} />} />
-              <Route path="/trust-registry" element={<AgencyTrustRegistry />} />
-              <Route path="/audit" element={<AuditTrail />} />
-              <Route path="/nexus" element={<NexusDetector />} />
-              <Route path="/mp-scores" element={<MPScorecard />} />
-              <Route path="/double-funding" element={<DoubleFunding />} />
-              <Route path="/state" element={<StateNodalDashboard />} />
-              <Route path="/district" element={<DistrictDashboard />} />
-              <Route path="/trends" element={<TrendAnalysis />} />
-              <Route path="/alerts" element={<AlertCenter />} />
-              <Route path="/mp-directory" element={<MPDirectory />} />
+              <Route path="/" element={<RoleRoute role={role} allowedRoles={['citizen']}><CitizenPortal /></RoleRoute>} />
+              <Route path="/mp" element={<RoleRoute role={role} allowedRoles={['mp', 'ministry', 'citizen', 'state']}><MPDashboard mpId={activeId} /></RoleRoute>} />
+              <Route path="/ministry" element={<RoleRoute role={role} allowedRoles={['ministry']}><MinistryDashboard /></RoleRoute>} />
+              <Route path="/agency" element={<RoleRoute role={role} allowedRoles={['agency']}><AgencyDashboard agencyId={activeId} /></RoleRoute>} />
+              <Route path="/trust-registry" element={<RoleRoute role={role} allowedRoles={['citizen', 'ministry', 'state']}><AgencyTrustRegistry /></RoleRoute>} />
+              <Route path="/audit" element={<RoleRoute role={role} allowedRoles={['citizen', 'ministry', 'mp']}><AuditTrail /></RoleRoute>} />
+              <Route path="/nexus" element={<RoleRoute role={role} allowedRoles={['ministry']}><NexusDetector /></RoleRoute>} />
+              <Route path="/mp-scores" element={<RoleRoute role={role} allowedRoles={['citizen', 'state']}><MPScorecard /></RoleRoute>} />
+              <Route path="/double-funding" element={<RoleRoute role={role} allowedRoles={['ministry']}><DoubleFunding /></RoleRoute>} />
+              <Route path="/state" element={<RoleRoute role={role} allowedRoles={['state']}><StateNodalDashboard /></RoleRoute>} />
+              <Route path="/district" element={<RoleRoute role={role} allowedRoles={['district']}><DistrictDashboard /></RoleRoute>} />
+              <Route path="/trends" element={<RoleRoute role={role} allowedRoles={['ministry', 'state']}><TrendAnalysis /></RoleRoute>} />
+              <Route path="/alerts" element={<RoleRoute role={role} allowedRoles={['ministry', 'state', 'district']}><AlertCenter /></RoleRoute>} />
+              <Route path="/mp-directory" element={<RoleRoute role={role} allowedRoles={['mp', 'ministry', 'citizen', 'state']}><MPDirectory /></RoleRoute>} />
               <Route path="*" element={<Navigate to="/app/" />} />
             </Routes>
           </>

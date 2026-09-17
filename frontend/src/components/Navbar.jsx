@@ -127,7 +127,19 @@ export default function Navbar({ role, setRole, activeId, setActiveId }) {
                 {ROLES.map(r => (
                   <div
                     key={r.id}
-                    onClick={() => { setRole(r.id); setRoleOpen(false); }}
+                    onClick={() => { 
+                      setRole(r.id); 
+                      setRoleOpen(false); 
+                      const roleRoutes = {
+                        'citizen': '/app/',
+                        'mp': '/app/mp',
+                        'ministry': '/app/ministry',
+                        'state': '/app/state',
+                        'district': '/app/district',
+                        'agency': '/app/agency',
+                      };
+                      navigate(roleRoutes[r.id] || '/app/');
+                    }}
                     style={{
                       padding: '8px 12px', cursor: 'pointer', borderRadius: '8px', fontSize: '0.85rem',
                       color: role === r.id ? 'var(--text-primary)' : 'var(--text-secondary)',
