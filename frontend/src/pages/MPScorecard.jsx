@@ -10,6 +10,7 @@ export default function MPScorecard() {
   const [sortBy, setSortBy] = useState('accountabilityScore');
   const [sortDir, setSortDir] = useState('desc');
   const [filterGrade, setFilterGrade] = useState('');
+  const [search, setSearch] = useState('');
   const [selected, setSelected] = useState(null);
 
   useEffect(() => {
@@ -22,6 +23,16 @@ export default function MPScorecard() {
   const scores = data?.scores || [];
   const filtered = scores
     .filter(s => !filterGrade || s.grade === filterGrade)
+    .filter(s => {
+      if (!search) return true;
+      const q = search.toLowerCase();
+      return (
+        s.name?.toLowerCase().includes(q) ||
+        s.constituency?.toLowerCase().includes(q) ||
+        s.state?.toLowerCase().includes(q) ||
+        s.party?.toLowerCase().includes(q)
+      );
+    })
     .sort((a, b) => {
       const av = a[sortBy] ?? (a.metrics?.[sortBy] ?? 0);
       const bv = b[sortBy] ?? (b.metrics?.[sortBy] ?? 0);
@@ -100,22 +111,65 @@ export default function MPScorecard() {
           </div>
         )}
 
-        {/* Grade Filter */}
-        <div style={{ display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap', alignItems: 'center' }}>
-          {['', 'A', 'B', 'C', 'D', 'F'].map(g => (
-            <button key={g} onClick={() => setFilterGrade(g)} style={{
-              padding: '6px 16px', borderRadius: 20, border: 'none', cursor: 'pointer',
-              fontSize: 13, fontWeight: 700,
-              background: filterGrade === g
-                ? (g ? `${gradeColors[g]}30` : 'rgba(99,102,241,0.3)')
-                : 'var(--text-primary)',
-              color: filterGrade === g
-                ? (g ? gradeColors[g] : '#6366f1')
-                : '#64748b',
-            }}>
-              {g || 'All Grades'}
-            </button>
-          ))}
+        {/* Search + Grade Filter */}
+        <div style={{ marginBottom: 20 }}>
+          {/* Search Bar */}
+          <div style={{ position: 'relative', marginBottom: 14 }}>
+            <span style={{
+              position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)',
+              fontSize: 16, pointerEvents: 'none', zIndex: 1,
+            }}>🔍</span>
+            <input
+              type="text"
+              placeholder="Search by MP name, constituency, state or party..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              style={{
+                width: '100%', boxSizing: 'border-box',
+                padding: '11px 44px 11px 40px',
+                borderRadius: 12, border: '1.5px solid #e2e8f0',
+                fontSize: 14, color: '#0f172a',
+                background: 'var(--text-primary)',
+                outline: 'none',
+                boxShadow: '0 1px 6px rgba(0,0,0,0.05)',
+                fontFamily: 'Inter, sans-serif',
+                transition: 'border-color 0.2s',
+              }}
+              onFocus={e => e.target.style.borderColor = '#6366f1'}
+              onBlur={e => e.target.style.borderColor = '#e2e8f0'}
+            />
+            {search && (
+              <button
+                onClick={() => setSearch('')}
+                style={{
+                  position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)',
+                  background: 'none', border: 'none', cursor: 'pointer',
+                  fontSize: 16, color: '#94a3b8',
+                }}
+              >✕</button>
+            )}
+          </div>
+
+          {/* Grade Filter Chips */}
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+            {['', 'A', 'B', 'C', 'D', 'F'].map(g => (
+              <button key={g} onClick={() => setFilterGrade(g)} style={{
+                padding: '6px 16px', borderRadius: 20, border: 'none', cursor: 'pointer',
+                fontSize: 13, fontWeight: 700,
+                background: filterGrade === g
+                  ? (g ? `${gradeColors[g]}30` : 'rgba(99,102,241,0.3)')
+                  : 'var(--text-primary)',
+                color: filterGrade === g
+                  ? (g ? gradeColors[g] : '#6366f1')
+                  : '#64748b',
+              }}>
+                {g || 'All Grades'}
+              </button>
+            ))}
+            <span style={{ fontSize: 12, color: '#94a3b8', marginLeft: 'auto' }}>
+              {filtered.length} MP{filtered.length !== 1 ? 's' : ''} found
+            </span>
+          </div>
         </div>
 
         {/* Scorecards Grid */}

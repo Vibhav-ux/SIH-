@@ -114,7 +114,7 @@ function seedAll() {
   externalSchemes.forEach(e => seedRaw('externalSchemes', e.id, e));
   // Populate Audit Ledger with recent mock entries
   const auditLedger = require('../services/auditLedger');
-  const mockProjects = Array.from(projects).slice(0, 5);
+  const mockProjects = db.getAll('projects').slice(0, 5);
   for (const p of mockProjects) {
     auditLedger.append({
       table: 'projects', id: p.id, action: 'CREATE', actor: 'ministry_nodal_officer',
