@@ -186,7 +186,7 @@ export default function AlertCenter() {
                 <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-end' }}>
                   
                   {/* Satellite button — for any alert with GPS coords */}
-                  {alert.projectLat && !isAcked && (
+                  {alert.projectLat != null && alert.projectLng != null && !isAcked && (
                     <button 
                       onClick={() => handleVerifySatellite(alert)} 
                       style={{

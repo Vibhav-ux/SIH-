@@ -17,9 +17,17 @@ function aggregateAlerts() {
   const agencies = db.getAll('agencies');
   const projects = db.getAll('projects');
 
+  // Pre-build project map for O(1) lookup
+  const projectMap = {};
+  for (const p of projects) projectMap[p.id] = p;
+  const agencyMap = {};
+  for (const a of agencies) agencyMap[a.id] = a;
+  const mpMap = {};
+  for (const m of mps) mpMap[m.id] = m;
+
   const riskScores = getAllRiskScores();
   riskScores.filter(r => r.riskScore >= 60).forEach(r => {
-    const project = projects.find(p => p.id === r.projectId);
+    const project = projectMap[r.projectId];
     alerts.push({
       id: `risk-${r.projectId}`,
       type: 'RISK_ANOMALY',
@@ -31,9 +39,9 @@ function aggregateAlerts() {
       projectLat: project?.lat,
       projectLng: project?.lng,
       projectBudget: project?.budget,
-      projectAgency: agencies.find(a => a.id === project?.agencyId)?.name,
+      projectAgency: agencyMap[project?.agencyId]?.name,
       score: r.riskScore,
-      mpName: mps.find(m => m.id === project?.mpId)?.name || '',
+      mpName: mpMap[project?.mpId]?.name || '',
       category: 'Risk Engine',
       icon: '🚨',
       timestamp: new Date().toISOString(),
@@ -43,6 +51,7 @@ function aggregateAlerts() {
   // ── 2. Fund Lapse Warnings ────────────────────────────────────────────────
   const forecasts = getForecastAll();
   forecasts.filter(f => f.willLapse).forEach(f => {
+    const project = projectMap[f.projectId];
     alerts.push({
       id: `lapse-${f.projectId}`,
       type: 'FUND_LAPSE',
@@ -51,8 +60,11 @@ function aggregateAlerts() {
       message: f.message,
       projectId: f.projectId,
       projectTitle: f.projectTitle,
+      projectLat: project?.lat,
+      projectLng: project?.lng,
+      projectBudget: project?.budget,
       score: f.projectedUtilizationPct,
-      mpName: mps.find(m => m.id === f.mpId)?.name || '',
+      mpName: mpMap[f.mpId]?.name || '',
       category: 'Fund Forecast',
       icon: '💸',
       timestamp: new Date().toISOString(),
@@ -62,6 +74,7 @@ function aggregateAlerts() {
   // ── 3. Duplicate Project Flags ────────────────────────────────────────────
   const duplicates = detectDuplicates();
   duplicates.forEach(d => {
+    const project = projectMap[d.pair[0]];
     alerts.push({
       id: `dup-${d.pair.join('-')}`,
       type: 'DUPLICATE_PROJECT',
@@ -70,6 +83,9 @@ function aggregateAlerts() {
       message: `"${d.projectA.title}" and "${d.projectB.title}" — ${d.similarity.titleSimilarity}% title match, ${d.similarity.distanceKm}km apart`,
       projectId: d.pair[0],
       projectTitle: d.projectA.title,
+      projectLat: d.projectA.lat,
+      projectLng: d.projectA.lng,
+      projectBudget: project?.budget,
       score: d.similarity.confidenceScore,
       category: 'Duplicate Detector',
       icon: '👻',
@@ -99,7 +115,7 @@ function aggregateAlerts() {
   // ── 5. Community Mismatch Alerts ──────────────────────────────────────────
   const communityScores = getAllCommunityTrustScores();
   communityScores.filter(c => c.mismatchScore >= 30).forEach(c => {
-    const project = projects.find(p => p.id === c.projectId);
+    const project = projectMap[c.projectId];
     alerts.push({
       id: `community-${c.projectId}`,
       type: 'COMMUNITY_MISMATCH',
@@ -108,8 +124,11 @@ function aggregateAlerts() {
       message: c.message,
       projectId: c.projectId,
       projectTitle: project?.title || c.projectId,
+      projectLat: project?.lat,
+      projectLng: project?.lng,
+      projectBudget: project?.budget,
       score: c.mismatchScore,
-      mpName: mps.find(m => m.id === project?.mpId)?.name || '',
+      mpName: mpMap[project?.mpId]?.name || '',
       category: 'Community Trust',
       icon: '👥',
       timestamp: new Date().toISOString(),
