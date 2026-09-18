@@ -92,10 +92,158 @@ function ParticleCanvas() {
   );
 }
 
+// ── Ministry credentials (demo) ──────────────────────────────────────────────
+const MINISTRY_CREDS = [
+  { username: 'admin',       password: 'ministry@2026', name: 'Nodal Officer, MoPR' },
+  { username: 'ministry',    password: 'India@2024',    name: 'Joint Secretary, MoPR' },
+  { username: 'superadmin',  password: 'mplad#sentinel', name: 'Secretary, MoPR' },
+];
+
+/* ── Ministry Login Sub-Form ─────────────────────────────────────────────── */
+function MinistryLoginForm({ onSuccess }) {
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPwd, setShowPwd]   = useState(false);
+  const [error, setError]       = useState('');
+  const [shake, setShake]       = useState(false);
+  const [loading, setLoading]   = useState(false);
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    setLoading(true);
+    // Simulate network auth delay
+    setTimeout(() => {
+      const match = MINISTRY_CREDS.find(
+        c => c.username === username.trim() && c.password === password
+      );
+      if (match) {
+        localStorage.setItem('mplad_ministry_auth', 'true');
+        localStorage.setItem('mplad_ministry_user', match.name);
+        setError('');
+        onSuccess();
+      } else {
+        setError('Invalid credentials. Please try again.');
+        setShake(true);
+        setTimeout(() => setShake(false), 600);
+      }
+      setLoading(false);
+    }, 600);
+  };
+
+  return (
+    <form onSubmit={handleSubmit} style={{
+      background: 'rgba(255,255,255,0.04)',
+      border: '1px solid rgba(245,158,11,0.3)',
+      borderRadius: 16, padding: '1.5rem', marginBottom: '1.25rem',
+      backdropFilter: 'blur(12px)',
+      animation: shake ? 'shake 0.5s ease' : 'none',
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: '1.25rem' }}>
+        <div style={{
+          width: 36, height: 36, borderRadius: 10,
+          background: 'linear-gradient(135deg, rgba(245,158,11,0.2), rgba(234,88,12,0.2))',
+          border: '1px solid rgba(245,158,11,0.4)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18,
+        }}>🔐</div>
+        <div>
+          <div style={{ color: '#f59e0b', fontWeight: 700, fontSize: '0.9rem' }}>Ministry Official Access</div>
+          <div style={{ color: '#64748b', fontSize: '0.75rem' }}>Secure portal — authorised personnel only</div>
+        </div>
+      </div>
+
+      {/* Username */}
+      <div style={{ marginBottom: '0.85rem' }}>
+        <label style={{ display: 'block', color: '#94a3b8', fontSize: '0.76rem', fontWeight: 600, marginBottom: 6, letterSpacing: '0.5px', textTransform: 'uppercase' }}>
+          Username
+        </label>
+        <input
+          type="text" autoComplete="username"
+          value={username} onChange={e => setUsername(e.target.value)}
+          placeholder="Enter your username"
+          required
+          style={{
+            width: '100%', boxSizing: 'border-box',
+            padding: '0.75rem 1rem', borderRadius: 10,
+            background: 'rgba(255,255,255,0.06)',
+            border: `1px solid ${error ? 'rgba(239,68,68,0.5)' : 'rgba(245,158,11,0.25)'}`,
+            color: 'var(--text-primary)', fontSize: '0.88rem', outline: 'none',
+          }}
+        />
+      </div>
+
+      {/* Password */}
+      <div style={{ marginBottom: '1rem', position: 'relative' }}>
+        <label style={{ display: 'block', color: '#94a3b8', fontSize: '0.76rem', fontWeight: 600, marginBottom: 6, letterSpacing: '0.5px', textTransform: 'uppercase' }}>
+          Password
+        </label>
+        <div style={{ position: 'relative' }}>
+          <input
+            type={showPwd ? 'text' : 'password'} autoComplete="current-password"
+            value={password} onChange={e => setPassword(e.target.value)}
+            placeholder="Enter your password"
+            required
+            style={{
+              width: '100%', boxSizing: 'border-box',
+              padding: '0.75rem 2.8rem 0.75rem 1rem', borderRadius: 10,
+              background: 'rgba(255,255,255,0.06)',
+              border: `1px solid ${error ? 'rgba(239,68,68,0.5)' : 'rgba(245,158,11,0.25)'}`,
+              color: 'var(--text-primary)', fontSize: '0.88rem', outline: 'none',
+            }}
+          />
+          <button type="button" onClick={() => setShowPwd(v => !v)} style={{
+            position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)',
+            background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, color: '#64748b',
+          }}>{showPwd ? '🙈' : '👁️'}</button>
+        </div>
+      </div>
+
+      {/* Error */}
+      {error && (
+        <div style={{
+          marginBottom: '0.85rem', padding: '0.6rem 1rem', borderRadius: 8,
+          background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)',
+          color: '#f87171', fontSize: '0.82rem', fontWeight: 600,
+          display: 'flex', alignItems: 'center', gap: 6,
+        }}>
+          ⚠️ {error}
+        </div>
+      )}
+
+      {/* Submit */}
+      <button type="submit" disabled={loading} style={{
+        width: '100%', padding: '0.8rem', borderRadius: 10, border: 'none',
+        background: 'linear-gradient(135deg, #f59e0b, #d97706)',
+        color: '#fff', fontSize: '0.9rem', fontWeight: 700,
+        cursor: loading ? 'not-allowed' : 'pointer',
+        opacity: loading ? 0.75 : 1, transition: 'all 0.2s',
+        boxShadow: '0 4px 16px rgba(245,158,11,0.35)',
+        letterSpacing: '0.5px',
+      }}>
+        {loading ? '⏳ Verifying...' : '🔓 Authenticate & Enter'}
+      </button>
+
+      <div style={{ textAlign: 'center', color: '#334155', fontSize: '0.7rem', marginTop: '0.85rem' }}>
+        Demo credentials: <span style={{ color: '#f59e0b' }}>admin</span> / <span style={{ color: '#f59e0b' }}>ministry@2026</span>
+      </div>
+
+      <style>{`
+        @keyframes shake {
+          0%,100% { transform: translateX(0); }
+          20%      { transform: translateX(-8px); }
+          40%      { transform: translateX(8px); }
+          60%      { transform: translateX(-6px); }
+          80%      { transform: translateX(6px); }
+        }
+      `}</style>
+    </form>
+  );
+}
+
 /* ── Main Login Page ─────────────────────────────────────── */
 export default function LoginPage() {
   const navigate = useNavigate();
   const [selectedRole, setSelectedRole] = useState(null);
+  const [ministryAuthed, setMinistryAuthed] = useState(false);
   const [mpSearch, setMpSearch] = useState('');
   const [mps, setMps]           = useState([]);
   const [selectedMp, setSelectedMp] = useState(null);
@@ -130,6 +278,7 @@ export default function LoginPage() {
   const handleLogin = () => {
     if (!selectedRole) return;
     if (selectedRole === 'mp' && !selectedMp) return;
+    if (selectedRole === 'ministry' && !ministryAuthed) return;
     const mpId = selectedRole === 'mp' ? selectedMp.id : 'mp-001';
     localStorage.setItem('mplad_role', selectedRole);
     localStorage.setItem('mplad_mp_id', mpId);
@@ -138,6 +287,7 @@ export default function LoginPage() {
     const role = ROLES.find(r => r.id === selectedRole);
     navigate(role.path);
   };
+
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '2rem', position: 'relative', zIndex: 1 }}>
@@ -271,10 +421,27 @@ export default function LoginPage() {
           </div>
         )}
 
+        {/* Ministry Auth Gate */}
+        {selectedRole === 'ministry' && !ministryAuthed && (
+          <MinistryLoginForm onSuccess={() => setMinistryAuthed(true)} />
+        )}
+        {selectedRole === 'ministry' && ministryAuthed && (
+          <div style={{
+            marginBottom: '1.25rem', padding: '0.85rem 1rem', borderRadius: 12,
+            background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.35)',
+            display: 'flex', alignItems: 'center', gap: 10,
+          }}>
+            <span style={{ fontSize: 20 }}>✅</span>
+            <div>
+              <div style={{ color: '#f59e0b', fontWeight: 700, fontSize: '0.9rem' }}>Authentication Successful</div>
+              <div style={{ color: '#94a3b8', fontSize: '0.76rem' }}>{localStorage.getItem('mplad_ministry_user')} — Ready to enter</div>
+            </div>
+          </div>
+        )}
         {/* Enter Button */}
         <button
           onClick={handleLogin}
-          disabled={!selectedRole || (selectedRole === 'mp' && !selectedMp)}
+          disabled={!selectedRole || (selectedRole === 'mp' && !selectedMp) || (selectedRole === 'ministry' && !ministryAuthed)}
           style={{
             width: '100%', padding: '1rem', borderRadius: '14px',
             background: selectedRole
