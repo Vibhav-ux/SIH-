@@ -102,7 +102,7 @@ export default function MPScorecard() {
                 { label: 'Fraud Flag Rate', weight: '20%', color: '#f43f5e' },
                 { label: 'Community Score', weight: '10%', color: '#8b5cf6' },
               ].map(m => (
-                <div key={m.label} style={{ padding: '10px 12px', background: 'var(--text-primary)', borderRadius: 10, textAlign: 'center' }}>
+                <div key={m.label} style={{ padding: '10px 12px', background: '#f8fafc', borderRadius: 10, textAlign: 'center', border: '1px solid #e2e8f0' }}>
                   <div style={{ fontSize: 18, fontWeight: 800, color: m.color, fontFamily: 'Outfit, sans-serif' }}>{m.weight}</div>
                   <div style={{ fontSize: 10, color: '#64748b', marginTop: 2 }}>{m.label}</div>
                 </div>
@@ -226,7 +226,7 @@ export default function MPScorecard() {
                     { label: 'Funds', value: `${mp.metrics.fundUtilizationPct}%`, color: '#4f46e5' },
                     { label: 'Stalled', value: mp.metrics.stalledProjects, color: mp.metrics.stalledProjects > 0 ? '#f43f5e' : '#10b981' },
                   ].map(m => (
-                    <div key={m.label} style={{ textAlign: 'center', padding: '6px 4px', background: 'var(--text-primary)', borderRadius: 6 }}>
+                    <div key={m.label} style={{ textAlign: 'center', padding: '6px 4px', background: '#f1f5f9', borderRadius: 6 }}>
                       <div style={{ fontSize: 13, fontWeight: 700, color: m.color }}>{m.value}</div>
                       <div style={{ fontSize: 10, color: '#64748b' }}>{m.label}</div>
                     </div>
@@ -248,7 +248,7 @@ export default function MPScorecard() {
             display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24,
           }} onClick={() => setSelected(null)}>
             <div style={{
-              background: 'var(--text-primary)', border: '1px solid #e2e8f0',
+              background: 'white', border: '1px solid #e2e8f0',
               borderRadius: 20, padding: 32, maxWidth: 560, width: '100%', maxHeight: '85vh', overflowY: 'auto',
             }} onClick={e => e.stopPropagation()}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }}>
@@ -264,7 +264,7 @@ export default function MPScorecard() {
                     <p style={{ fontSize: 13, color: '#64748b', margin: 0 }}>{selected.constituency} · {selected.state} · {selected.party}</p>
                   </div>
                 </div>
-                <button onClick={() => setSelected(null)} style={{ background: 'var(--text-primary)', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', borderRadius: 8, padding: '6px 10px', fontSize: 16 }}>✕</button>
+                <button onClick={() => setSelected(null)} style={{ background: '#f1f5f9', border: '1px solid #e2e8f0', color: '#475569', cursor: 'pointer', borderRadius: 8, padding: '6px 10px', fontSize: 16 }}>✕</button>
               </div>
 
               {/* Score breakdown */}
@@ -276,7 +276,7 @@ export default function MPScorecard() {
                   { label: 'Integrity', value: selected.breakdown.fraudScore, max: 20, color: '#f43f5e' },
                   { label: 'Community', value: selected.breakdown.communityScore, max: 10, color: '#8b5cf6' },
                 ].map(m => (
-                  <div key={m.label} style={{ textAlign: 'center', padding: '10px 6px', background: 'var(--text-primary)', borderRadius: 10 }}>
+                  <div key={m.label} style={{ textAlign: 'center', padding: '10px 6px', background: '#f8fafc', borderRadius: 10, border: '1px solid #e2e8f0' }}>
                     <div style={{ fontSize: 18, fontWeight: 800, color: m.color, fontFamily: 'Outfit, sans-serif' }}>{m.value}</div>
                     <div style={{ fontSize: 9, color: '#64748b' }}>/ {m.max}</div>
                     <div style={{ fontSize: 10, color: '#64748b', marginTop: 2 }}>{m.label}</div>
