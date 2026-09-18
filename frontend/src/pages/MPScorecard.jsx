@@ -116,8 +116,8 @@ export default function MPScorecard() {
           {/* Search Bar */}
           <div style={{ position: 'relative', marginBottom: 14 }}>
             <span style={{
-              position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)',
-              fontSize: 16, pointerEvents: 'none', zIndex: 1,
+              position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)',
+              fontSize: 16, pointerEvents: 'none', zIndex: 1, color: '#6366f1',
             }}>🔍</span>
             <input
               type="text"
@@ -126,25 +126,36 @@ export default function MPScorecard() {
               onChange={e => setSearch(e.target.value)}
               style={{
                 width: '100%', boxSizing: 'border-box',
-                padding: '11px 44px 11px 40px',
-                borderRadius: 12, border: '1.5px solid #e2e8f0',
-                fontSize: 14, color: '#0f172a',
-                background: 'var(--text-primary)',
+                padding: '13px 48px 13px 44px',
+                borderRadius: 14,
+                border: '2px solid rgba(99,102,241,0.25)',
+                borderLeft: '4px solid #6366f1',
+                fontSize: 14, color: '#1e1b4b',
+                background: 'linear-gradient(135deg, rgba(238,242,255,0.9), rgba(245,243,255,0.9))',
                 outline: 'none',
-                boxShadow: '0 1px 6px rgba(0,0,0,0.05)',
+                boxShadow: '0 2px 12px rgba(99,102,241,0.12)',
                 fontFamily: 'Inter, sans-serif',
-                transition: 'border-color 0.2s',
+                transition: 'all 0.25s',
               }}
-              onFocus={e => e.target.style.borderColor = '#6366f1'}
-              onBlur={e => e.target.style.borderColor = '#e2e8f0'}
+              onFocus={e => {
+                e.target.style.borderColor = '#6366f1';
+                e.target.style.boxShadow = '0 4px 20px rgba(99,102,241,0.25)';
+                e.target.style.background = 'linear-gradient(135deg, rgba(224,231,255,0.95), rgba(237,233,254,0.95))';
+              }}
+              onBlur={e => {
+                e.target.style.borderColor = 'rgba(99,102,241,0.25)';
+                e.target.style.boxShadow = '0 2px 12px rgba(99,102,241,0.12)';
+                e.target.style.background = 'linear-gradient(135deg, rgba(238,242,255,0.9), rgba(245,243,255,0.9))';
+              }}
             />
             {search && (
               <button
                 onClick={() => setSearch('')}
                 style={{
                   position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)',
-                  background: 'none', border: 'none', cursor: 'pointer',
-                  fontSize: 16, color: '#94a3b8',
+                  background: 'rgba(99,102,241,0.1)', border: 'none', cursor: 'pointer',
+                  borderRadius: 6, padding: '2px 6px',
+                  fontSize: 13, color: '#6366f1', fontWeight: 700,
                 }}
               >✕</button>
             )}
