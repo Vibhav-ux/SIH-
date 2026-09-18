@@ -101,8 +101,18 @@ router.get('/trends', (req, res) => {
 });
 
 // GET /api/ai/alerts — Centralized alerts from all detection services
+let _alertsCache = null;
+let _alertsCacheTs = 0;
+const ALERTS_TTL = 2 * 60 * 1000; // 2 minutes
+
 router.get('/alerts', (req, res) => {
+  const now = Date.now();
+  if (_alertsCache && (now - _alertsCacheTs) < ALERTS_TTL) {
+    return res.json(_alertsCache);
+  }
   const alerts = aggregateAlerts();
+  _alertsCache = alerts;
+  _alertsCacheTs = now;
   res.json(alerts);
 });
 

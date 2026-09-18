@@ -30,10 +30,12 @@ export default function AlertCenter() {
   // Satellite Modal State
   const [satelliteProject, setSatelliteProject] = useState(null);
 
+  const [error, setError] = useState(null);
+
   useEffect(() => {
     aiApi.getAlerts()
       .then(d => { setData(d); setLoading(false); })
-      .catch(console.error);
+      .catch(err => { setError(err.message || 'Failed to load alerts'); setLoading(false); });
   }, []);
 
   const filtered = (data?.alerts || []).filter(a => {
@@ -52,7 +54,6 @@ export default function AlertCenter() {
   }
 
   function handleVerifySatellite(alert) {
-    // Only open if the alert has coordinates
     if (alert.projectLat && alert.projectLng) {
       setSatelliteProject({
         id: alert.projectId,
@@ -62,8 +63,6 @@ export default function AlertCenter() {
         budget: alert.projectBudget || 0,
         agencyName: alert.projectAgency || 'Unknown Agency'
       });
-    } else {
-      alert('Error: No GPS coordinates found for this project.');
     }
   }
 
@@ -102,13 +101,20 @@ export default function AlertCenter() {
           {/* Stats */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 14, marginTop: 24 }}>
             {[
-              { label: 'Total Alerts', value: data?.total || 0, icon: '🔔', color: '#4f46e5' },
-              { label: 'Critical', value: data?.critical || 0, icon: '🔴', color: '#dc2626' },
-              { label: 'High', value: data?.high || 0, icon: '🟠', color: '#e11d48' },
-              { label: 'Medium', value: data?.medium || 0, icon: '🟡', color: '#d97706' },
-              { label: 'Low', value: data?.low || 0, icon: '🟢', color: '#059669' },
+              { label: 'Total Alerts', value: data?.total ?? '—', icon: '🔔', color: '#4f46e5' },
+              { label: 'Critical', value: data?.critical ?? '—', icon: '🔴', color: '#dc2626' },
+              { label: 'High', value: data?.high ?? '—', icon: '🟠', color: '#e11d48' },
+              { label: 'Medium', value: data?.medium ?? '—', icon: '🟡', color: '#d97706' },
+              { label: 'Low', value: data?.low ?? '—', icon: '🟢', color: '#059669' },
             ].map(s => <StatCard key={s.label} {...s} loading={loading} />)}
           </div>
+
+          {/* Error Banner */}
+          {error && (
+            <div style={{ marginTop: 16, padding: '12px 16px', borderRadius: 10, background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', color: '#dc2626', fontSize: 13, fontWeight: 600 }}>
+              ⚠️ Could not load alerts: {error}. The AI engine is still warming up — refresh in a moment.
+            </div>
+          )}
         </div>
       </div>
 
@@ -179,15 +185,15 @@ export default function AlertCenter() {
                 {/* Action */}
                 <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-end' }}>
                   
-                  {/* Show Verify via Satellite if it's a Risk Anomaly */}
-                  {alert.type === 'RISK_ANOMALY' && alert.projectLat && !isAcked && (
+                  {/* Satellite button — for any alert with GPS coords */}
+                  {alert.projectLat && !isAcked && (
                     <button 
                       onClick={() => handleVerifySatellite(alert)} 
                       style={{
                         padding: '6px 14px', borderRadius: 8, fontSize: 11, fontWeight: 600,
-                        background: '#dc2626', color: 'white', border: 'none',
+                        background: 'linear-gradient(135deg, #dc2626, #b91c1c)', color: 'white', border: 'none',
                         cursor: 'pointer', transition: 'all 0.2s', whiteSpace: 'nowrap',
-                        boxShadow: '0 2px 8px rgba(220, 38, 38, 0.4)'
+                        boxShadow: '0 2px 8px rgba(220,38,38,0.4)'
                       }}
                     >
                       🛰️ Verify via Satellite
@@ -197,7 +203,7 @@ export default function AlertCenter() {
                   {!isAcked ? (
                     <button onClick={() => handleAcknowledge(alert.id)} style={{
                       padding: '6px 14px', borderRadius: 8, fontSize: 11, fontWeight: 600,
-                      background: 'var(--text-primary)', border: '1px solid #e2e8f0', color: '#475569',
+                      background: '#f8fafc', border: '1px solid #e2e8f0', color: '#475569',
                       cursor: 'pointer', transition: 'all 0.2s', whiteSpace: 'nowrap',
                     }}>Acknowledge</button>
                   ) : (
@@ -208,11 +214,18 @@ export default function AlertCenter() {
             );
           })}
 
-          {filtered.length === 0 && !loading && (
+          {filtered.length === 0 && !loading && !error && (
             <div style={{ textAlign: 'center', padding: 60, color: 'var(--text-secondary)' }}>
               <div style={{ fontSize: 48, marginBottom: 16 }}>✅</div>
               <div style={{ fontSize: 18, fontWeight: 600, color: '#475569', marginBottom: 8 }}>No alerts match your filters</div>
               <div>Try adjusting severity or type filters</div>
+            </div>
+          )}
+          {loading && (
+            <div style={{ textAlign: 'center', padding: 60, color: '#64748b' }}>
+              <div style={{ fontSize: 36, marginBottom: 16, animation: 'spin 1s linear infinite', display: 'inline-block' }}>⏳</div>
+              <div style={{ fontSize: 16, fontWeight: 600 }}>AI engines loading alerts...</div>
+              <div style={{ fontSize: 13, marginTop: 8 }}>Risk engine + forecast + duplicate detection running</div>
             </div>
           )}
         </div>
