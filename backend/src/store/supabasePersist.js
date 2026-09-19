@@ -1,12 +1,20 @@
 // Supabase Persistence Layer — Drop-in replacement for neonPersist.js
 // Same function signatures — everything else in the codebase stays unchanged.
 require('dotenv').config({ path: '.env.local' });
+require('dotenv').config({ path: '.env' }); // fallback for Railway/production
 const { createClient } = require('@supabase/supabase-js');
 
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_KEY
-);
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_KEY = process.env.SUPABASE_KEY || process.env.SUPABASE_ANON_KEY;
+
+if (!SUPABASE_URL || !SUPABASE_KEY) {
+  console.warn('⚠️  SUPABASE_URL or SUPABASE_KEY not set — running without Supabase persistence.');
+}
+
+const supabase = (SUPABASE_URL && SUPABASE_KEY)
+  ? createClient(SUPABASE_URL, SUPABASE_KEY)
+  : { from: () => ({ select: () => ({ data: [], error: null }), insert: () => ({}), delete: () => ({}) }) };
+
 
 // ─── Table → store key mapping ───────────────────────────────────────────────
 const TABLE_MAP = {
