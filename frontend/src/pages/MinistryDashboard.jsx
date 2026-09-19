@@ -106,7 +106,7 @@ export default function MinistryDashboard() {
                         <td style={{ color: '#6366f1' }}>{p.mpName}</td>
                         <td>{p.mpState}</td>
                         <td>
-                          <span style={{ fontSize: 11, color: 'var(--text-secondary)', background: 'var(--text-primary)', padding: '2px 8px', borderRadius: 6 }}>
+                          <span style={{ fontSize: 11, color: '#4f46e5', background: '#eef2ff', padding: '2px 8px', borderRadius: 6, fontWeight: 600 }}>
                             {p.category}
                           </span>
                         </td>

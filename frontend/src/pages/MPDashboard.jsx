@@ -4,8 +4,10 @@ import StatCard from '../components/StatCard';
 import ProjectCard from '../components/ProjectCard';
 
 export default function MPDashboard() {
-  // Always read directly from localStorage so navigating from MPDirectory always shows the right MP
-  const [mpId, setMpId] = useState(() => localStorage.getItem('mplad_mp_id') || 'mp-001');
+  const role = localStorage.getItem('mplad_role') || 'citizen';
+  const lockedMpId = localStorage.getItem('mplad_mp_id') || 'mp-001';
+  // If viewing as MP role, always lock to their own ID — cannot be switched
+  const [mpId, setMpId] = useState(() => lockedMpId);
   const [overview, setOverview] = useState(null);
   const [projects, setProjects] = useState([]);
   const [proposals, setProposals] = useState([]);
@@ -21,15 +23,18 @@ export default function MPDashboard() {
   useEffect(() => {
     const onStorage = () => {
       const id = localStorage.getItem('mplad_mp_id');
-      if (id && id !== mpId) {
+      const currentRole = localStorage.getItem('mplad_role');
+      // Only allow switching MPs if NOT in the 'mp' role (ministry/citizen can browse)
+      if (currentRole !== 'mp' && id && id !== mpId) {
         setMpId(id);
         setActiveTab('overview');
       }
     };
     window.addEventListener('storage', onStorage);
-    // Also check immediately on mount in case navigation happened in the same tab
+    // Also check immediately on mount
     const id = localStorage.getItem('mplad_mp_id');
-    if (id && id !== mpId) setMpId(id);
+    const currentRole = localStorage.getItem('mplad_role');
+    if (currentRole !== 'mp' && id && id !== mpId) setMpId(id);
     return () => window.removeEventListener('storage', onStorage);
   }, []);
 
@@ -113,9 +118,12 @@ export default function MPDashboard() {
                 🚨 {alerts.length} Active Alerts
               </div>
             )}
+          {/* Only MPs can submit new proposals */}
+          {role === 'mp' && (
             <button className="btn-primary" onClick={() => setShowNewProposal(true)}>
               + New Proposal
             </button>
+          )}
           </div>
         </div>
 
@@ -165,7 +173,7 @@ export default function MPDashboard() {
         </div>
 
         {/* Tabs */}
-        <div style={{ display: 'flex', gap: 4, marginBottom: 24, background: 'var(--text-primary)', padding: 4, borderRadius: 12, width: 'fit-content' }}>
+        <div style={{ display: 'flex', gap: 4, marginBottom: 24, background: '#f1f5f9', padding: 4, borderRadius: 12, width: 'fit-content' }}>
           {TABS.map(tab => (
             <button key={tab} onClick={() => setActiveTab(tab)} style={{
               padding: '8px 20px', borderRadius: 8, border: 'none', cursor: 'pointer',
@@ -248,8 +256,8 @@ export default function MPDashboard() {
           </div>
         )}
 
-        {/* New Proposal Modal */}
-        {showNewProposal && (
+        {/* New Proposal Modal — MP role only */}
+        {showNewProposal && role === 'mp' && (
           <div style={{
             position: 'fixed', inset: 0, zIndex: 1000,
             background: 'rgba(0,0,0,0.06)', backdropFilter: 'blur(8px)',
