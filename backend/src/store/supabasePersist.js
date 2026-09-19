@@ -1,20 +1,34 @@
-// Supabase Persistence Layer — Drop-in replacement for neonPersist.js
-// Same function signatures — everything else in the codebase stays unchanged.
-require('dotenv').config({ path: '.env.local' });
-require('dotenv').config({ path: '.env' }); // fallback for Railway/production
-const { createClient } = require('@supabase/supabase-js');
+// Supabase Persistence Layer
+// Lazy-initialized: env vars are read at RUNTIME (first function call),
+// never at module load time — prevents Railway build-time secret errors.
 
-const SUPABASE_URL = process.env.SUPABASE_URL;
-const SUPABASE_KEY = process.env.SUPABASE_KEY || process.env.SUPABASE_ANON_KEY;
+let _supabase = null;
 
-if (!SUPABASE_URL || !SUPABASE_KEY) {
-  console.warn('⚠️  SUPABASE_URL or SUPABASE_KEY not set — running without Supabase persistence.');
+function getClient() {
+  if (_supabase) return _supabase;
+
+  const url = process.env.SUPABASE_URL;
+  const key = process.env.SUPABASE_KEY || process.env.SUPABASE_ANON_KEY;
+
+  if (!url || !key) {
+    console.warn('[Supabase] No credentials — running in-memory only (no persistence).');
+    // Return a no-op client
+    _supabase = {
+      from: () => ({
+        select: () => Promise.resolve({ data: [], error: null }),
+        upsert: () => Promise.resolve({}),
+        insert: () => Promise.resolve({}),
+        delete: () => ({ eq: () => Promise.resolve({}) }),
+      }),
+    };
+    return _supabase;
+  }
+
+  const { createClient } = require('@supabase/supabase-js');
+  _supabase = createClient(url, key);
+  console.log('[Supabase] Client initialized ✅');
+  return _supabase;
 }
-
-const supabase = (SUPABASE_URL && SUPABASE_KEY)
-  ? createClient(SUPABASE_URL, SUPABASE_KEY)
-  : { from: () => ({ select: () => ({ data: [], error: null }), insert: () => ({}), delete: () => ({}) }) };
-
 
 // ─── Table → store key mapping ───────────────────────────────────────────────
 const TABLE_MAP = {
@@ -27,66 +41,51 @@ const TABLE_MAP = {
   externalSchemes:   'store_external_schemes',
 };
 
-// ─── Create all tables via Supabase RPC (runs raw SQL) ───────────────────────
-// Supabase doesn't support direct DDL from the client — tables must be created
-// via the Supabase Dashboard SQL editor or via migrations.
-// This function is kept for API compatibility but is a no-op in Supabase.
+// ─── No-op: tables created via Supabase Dashboard ────────────────────────────
 async function createTables() {
-  console.log('[Supabase] Using Supabase as persistence layer. Tables must be created via Supabase Dashboard.');
+  console.log('[Supabase] Tables managed via Supabase Dashboard.');
   return true;
 }
 
 // ─── Load all data from Supabase into the in-memory store ────────────────────
 async function loadAll(store) {
+  const supabase = getClient();
   let totalLoaded = 0;
 
-  // Only load non-seed tables from Supabase.
-  // projects/proposals/mps come from seeded-data.json — loading old Supabase
-  // versions would overwrite with stale data (old mpId formats like "mp-005").
   const LOAD_FROM_SUPABASE = ['agencies', 'complaints', 'communityReports', 'externalSchemes', 'progressUpdates'];
 
   const loadPromises = Object.entries(TABLE_MAP)
     .filter(([storeKey]) => LOAD_FROM_SUPABASE.includes(storeKey))
     .map(async ([storeKey, supabaseTable]) => {
-
-    try {
-      const { data, error } = await supabase
-        .from(supabaseTable)
-        .select('id, data');
-
-      if (error) {
-        console.warn(`[Supabase] Could not load ${supabaseTable}: ${error.message}`);
+      try {
+        const { data, error } = await supabase.from(supabaseTable).select('id, data');
+        if (error) {
+          if (!store[storeKey]) store[storeKey] = {};
+          return 0;
+        }
         if (!store[storeKey]) store[storeKey] = {};
+        let count = 0;
+        for (const row of (data || [])) {
+          store[storeKey][row.id] = { ...row.data, id: row.id };
+          count++;
+        }
+        return count;
+      } catch (err) {
+        console.warn(`[Supabase] Load error for ${supabaseTable}:`, err.message);
         return 0;
       }
-
-      if (!store[storeKey]) store[storeKey] = {};
-      let count = 0;
-      for (const row of (data || [])) {
-        store[storeKey][row.id] = { ...row.data, id: row.id };
-        count++;
-      }
-      return count;
-    } catch (err) {
-      console.warn(`[Supabase] Load error for ${supabaseTable}:`, err.message);
-      return 0;
-    }
-  });
+    });
 
   const counts = await Promise.all(loadPromises);
-  totalLoaded += counts.reduce((a, b) => a + b, 0);
-
-  // NOTE: MPs are NOT loaded from Supabase — they come from seeded-data.json
-  // which uses the correct LS-001/RS-001 ID format.
-
+  totalLoaded = counts.reduce((a, b) => a + b, 0);
   console.log(`[Supabase] Loaded ${totalLoaded} records into memory`);
   return totalLoaded;
 }
 
 // ─── Persist a record to Supabase (fire-and-forget) ──────────────────────────
 async function saveRecord(storeKey, id, data) {
-  // Skip all writes if persistence is disabled (e.g. Vercel cold start)
   if (process.env.DISABLE_SUPABASE_PERSIST === 'true') return;
+  const supabase = getClient();
 
   if (storeKey === 'mps') {
     supabase.from('mps').upsert({
@@ -115,6 +114,7 @@ async function saveRecord(storeKey, id, data) {
 // ─── Delete a record from Supabase ───────────────────────────────────────────
 function deleteRecord(storeKey, id) {
   if (process.env.DISABLE_SUPABASE_PERSIST === 'true') return;
+  const supabase = getClient();
   const supabaseTable = TABLE_MAP[storeKey];
   if (!supabaseTable) return;
   supabase.from(supabaseTable).delete().eq('id', id).then(() => {}).catch(() => {});
@@ -123,14 +123,16 @@ function deleteRecord(storeKey, id) {
 // ─── Append to audit ledger ───────────────────────────────────────────────────
 function appendAudit(entry) {
   if (process.env.DISABLE_SUPABASE_PERSIST === 'true') return;
+  const supabase = getClient();
   supabase.from('audit_ledger').insert({
     table_name: entry.table, record_id: entry.id,
     action: entry.action, actor: entry.actor, payload: entry.payload,
   }).then(() => {}).catch(() => {});
 }
 
-// ─── Count total records (to check if DB is empty) ───────────────────────────
+// ─── Count total records ──────────────────────────────────────────────────────
 async function getTotalRecords() {
+  const supabase = getClient();
   let total = 0;
   for (const supabaseTable of Object.values(TABLE_MAP)) {
     try {
@@ -138,11 +140,9 @@ async function getTotalRecords() {
         .from(supabaseTable)
         .select('id', { count: 'exact', head: true });
       if (!error) total += count || 0;
-    } catch (err) {
-      // Table may not exist yet, skip
-    }
+    } catch (err) { /* skip */ }
   }
   return total;
 }
 
-module.exports = { createTables, loadAll, saveRecord, deleteRecord, appendAudit, getTotalRecords, supabase };
+module.exports = { createTables, loadAll, saveRecord, deleteRecord, appendAudit, getTotalRecords, supabase: null };
