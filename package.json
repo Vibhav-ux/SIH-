@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "scripts": {
     "start": "cd backend && node src/server.js",
-    "install-backend": "cd backend && npm install"
+    "postinstall": "cd backend && npm install"
   },
   "engines": {
     "node": ">=18.0.0"
