@@ -249,7 +249,26 @@ export default function LoginPage() {
   const [selectedMp, setSelectedMp] = useState(null);
   const [loading, setLoading]   = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
+  const [selectedAgency, setSelectedAgency] = useState(null);
   const searchTimer = useRef(null);
+
+  const AGENCIES = [
+    { id: 'ag-001', name: 'Shree Ram Constructions Pvt Ltd', state: 'Uttar Pradesh' },
+    { id: 'ag-002', name: 'Kerala Infrastructure Development Corp', state: 'Kerala' },
+    { id: 'ag-003', name: 'Vishal Projects Limited', state: 'Uttar Pradesh' },
+    { id: 'ag-004', name: 'Sunrise Road Works', state: 'Tamil Nadu' },
+    { id: 'ag-005', name: 'Gujarat Civil Engineers Consortium', state: 'Gujarat' },
+    { id: 'ag-006', name: 'Deccan Builders & Associates', state: 'Telangana' },
+    { id: 'ag-007', name: 'Bengal Public Works Solutions', state: 'West Bengal' },
+    { id: 'ag-008', name: 'Andhra Rural Development Trust', state: 'Andhra Pradesh' },
+    { id: 'ag-009', name: 'Punjab Water & Sanitation Board', state: 'Punjab' },
+    { id: 'ag-010', name: 'MP State Road Development Corp', state: 'Madhya Pradesh' },
+    { id: 'ag-011', name: 'National Smart Infra Ltd', state: 'Uttar Pradesh' },
+    { id: 'ag-012', name: 'South India Civil Works', state: 'Tamil Nadu' },
+    { id: 'ag-013', name: 'Rapid Build Infrastructure', state: 'Gujarat' },
+    { id: 'ag-014', name: 'GreenPath Environmental Works', state: 'Karnataka' },
+    { id: 'ag-015', name: 'Hill Region Development Agency', state: 'Himachal Pradesh' },
+  ];
 
   // Pre-load MPs list immediately when MP role selected
   useEffect(() => {
@@ -279,11 +298,14 @@ export default function LoginPage() {
     if (!selectedRole) return;
     if (selectedRole === 'mp' && !selectedMp) return;
     if (selectedRole === 'ministry' && !ministryAuthed) return;
-    const mpId = selectedRole === 'mp' ? selectedMp.id : 'mp-001';
+    if (selectedRole === 'agency' && !selectedAgency) return;
+    const activeId = selectedRole === 'mp' ? selectedMp.id
+      : selectedRole === 'agency' ? selectedAgency.id
+      : 'mp-001';
     localStorage.setItem('mplad_role', selectedRole);
-    localStorage.setItem('mplad_mp_id', mpId);
-    localStorage.setItem('mplad_mp_name', selectedMp?.name || '');
-    localStorage.setItem('mplad_mp_state', selectedMp?.state || '');
+    localStorage.setItem('mplad_mp_id', activeId);
+    localStorage.setItem('mplad_mp_name', selectedMp?.name || selectedAgency?.name || '');
+    localStorage.setItem('mplad_mp_state', selectedMp?.state || selectedAgency?.state || '');
     const role = ROLES.find(r => r.id === selectedRole);
     navigate(role.path);
   };
@@ -321,7 +343,7 @@ export default function LoginPage() {
           {ROLES.map(role => (
             <div
               key={role.id}
-              onClick={() => { setSelectedRole(role.id); setSelectedMp(null); setMpSearch(''); }}
+              onClick={() => { setSelectedRole(role.id); setSelectedMp(null); setSelectedAgency(null); setMpSearch(''); }}
               style={{
                 background: selectedRole === role.id
                   ? `linear-gradient(135deg, ${role.color}18, ${role.color}30)`
@@ -425,6 +447,39 @@ export default function LoginPage() {
         {selectedRole === 'ministry' && !ministryAuthed && (
           <MinistryLoginForm onSuccess={() => setMinistryAuthed(true)} />
         )}
+
+        {/* Agency Selector */}
+        {selectedRole === 'agency' && (
+          <div style={{
+            width: '100%', marginBottom: '1.25rem', padding: '1.25rem',
+            background: 'rgba(129,140,248,0.08)', border: '1px solid rgba(129,140,248,0.25)',
+            borderRadius: '16px', backdropFilter: 'blur(12px)',
+          }}>
+            <h3 style={{ color: 'var(--text-primary)', margin: '0 0 1rem', fontSize: '0.95rem', fontWeight: 700 }}>
+              🏗️ Select Your Agency
+            </h3>
+            <select
+              value={selectedAgency?.id || ''}
+              onChange={e => setSelectedAgency(AGENCIES.find(a => a.id === e.target.value) || null)}
+              style={{
+                width: '100%', padding: '0.85rem 1rem', borderRadius: '10px',
+                background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(129,140,248,0.35)',
+                color: 'var(--text-primary)', fontSize: '0.9rem', outline: 'none', cursor: 'pointer',
+              }}
+            >
+              <option value="">— Select an agency —</option>
+              {AGENCIES.map(a => (
+                <option key={a.id} value={a.id}>{a.name} ({a.state})</option>
+              ))}
+            </select>
+            {selectedAgency && (
+              <div style={{ marginTop: '0.75rem', padding: '0.7rem 1rem', borderRadius: 10, background: 'rgba(129,140,248,0.15)', border: '1px solid rgba(129,140,248,0.3)' }}>
+                <div style={{ color: '#818cf8', fontWeight: 700, fontSize: '0.9rem' }}>✅ {selectedAgency.name}</div>
+                <div style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', marginTop: 3 }}>{selectedAgency.state}</div>
+              </div>
+            )}
+          </div>
+        )}
         {selectedRole === 'ministry' && ministryAuthed && (
           <div style={{
             marginBottom: '1.25rem', padding: '0.85rem 1rem', borderRadius: 12,
@@ -441,7 +496,7 @@ export default function LoginPage() {
         {/* Enter Button */}
         <button
           onClick={handleLogin}
-          disabled={!selectedRole || (selectedRole === 'mp' && !selectedMp) || (selectedRole === 'ministry' && !ministryAuthed)}
+          disabled={!selectedRole || (selectedRole === 'mp' && !selectedMp) || (selectedRole === 'ministry' && !ministryAuthed) || (selectedRole === 'agency' && !selectedAgency)}
           style={{
             position: 'relative', zIndex: 1,
             width: '100%', padding: '1rem', borderRadius: '14px',
@@ -449,8 +504,8 @@ export default function LoginPage() {
               ? `linear-gradient(135deg, ${ROLES.find(r => r.id === selectedRole)?.color}, ${ROLES.find(r => r.id === selectedRole)?.color}bb)`
               : 'rgba(255,255,255,0.07)',
             border: 'none', color: 'var(--text-primary)', fontSize: '1rem', fontWeight: 700,
-            cursor: selectedRole && (selectedRole !== 'mp' || selectedMp) ? 'pointer' : 'not-allowed',
-            opacity: selectedRole && (selectedRole !== 'mp' || selectedMp) ? 1 : 0.45,
+            cursor: selectedRole && (selectedRole !== 'mp' || selectedMp) && (selectedRole !== 'agency' || selectedAgency) ? 'pointer' : 'not-allowed',
+            opacity: selectedRole && (selectedRole !== 'mp' || selectedMp) && (selectedRole !== 'ministry' || ministryAuthed) && (selectedRole !== 'agency' || selectedAgency) ? 1 : 0.45,
             transition: 'all 0.25s ease',
             boxShadow: selectedRole ? `0 8px 32px ${ROLES.find(r => r.id === selectedRole)?.color}40` : 'none',
             letterSpacing: '0.5px',
