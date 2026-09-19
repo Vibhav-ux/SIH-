@@ -111,12 +111,25 @@ export default function NirikshanBot() {
       let botResponse = "Processing your request through Nirikshan AI... I have logged this query for the nodal officer.";
       const lowerInput = queryText.toLowerCase();
       
-      if (lowerInput.includes('risk') || lowerInput.includes('highest')) {
-        botResponse = "Based on my real-time Z-Score analysis, Maharashtra currently holds the highest concentration of high-risk projects. Would you like me to filter the dashboard?";
+      // Hardcoded responses for suggestion chips and general queries
+      if (lowerInput.includes('high risk') || lowerInput.includes('🚨')) {
+        botResponse = "Based on my real-time Z-Score analysis, there are currently 12 projects flagged as High Risk nationally. The highest concentration is in Maharashtra. Would you like me to filter the dashboard to show these?";
+      } else if (lowerInput.includes('lowest fund utilization') || lowerInput.includes('💰')) {
+        botResponse = "MP Santosh Pandey from Rajnandgaon, Chhattisgarh currently has the lowest utilization at 35%. I recommend generating an automated notice for expediting project proposals.";
+      } else if (lowerInput.includes('stalled projects') || lowerInput.includes('🔍')) {
+        botResponse = "I have detected 28 stalled projects nationwide. 14 of these have been stalled for over 6 months without any progress updates from the implementing agencies.";
+      } else if (lowerInput.includes('top agencies') || lowerInput.includes('🏗️')) {
+        botResponse = "The top performing agency is GreenPath Environmental Works (Karnataka) with a Trust Score of 88/100 and 25 completed projects. They have zero fraud flags and an average delay of only 5 days.";
+      } else if (lowerInput.includes('nexus alerts') || lowerInput.includes('🕸️')) {
+        botResponse = "Nexus Graph online. I have identified a suspicious clustering pattern where 65% of contracts for LS-001, LS-002, and LS-003 in UP were awarded to a single agency: Vishal Projects Limited.";
+      } else if (lowerInput.includes('fund summary') || lowerInput.includes('📊')) {
+        botResponse = "National MPLAD Fund Summary: Total Allocated across 774 MPs is ₹1,935 Crores. Currently, ₹1,240 Crores (64%) have been utilized. There is an active payment gap of 8% awaiting clearance.";
+      } else if (lowerInput.includes('lapse risk') || lowerInput.includes('⚡')) {
+        botResponse = "My Linear Regression model predicts ₹45.2 Crores will lapse nationally by year-end if disbursement velocity doesn't improve. I have highlighted the affected projects in orange.";
+      } else if (lowerInput.includes('most active') || lowerInput.includes('🏛️')) {
+        botResponse = "MP Rajnath Singh from Lucknow, UP is currently highly active, with 15 recommended works and a 90% utilization rate.";
       } else if (lowerInput.includes('duplicate') || lowerInput.includes('ghost')) {
         botResponse = "My NLP and GPS engines have flagged 14 potential duplicate schemes. They share a 75% confidence overlap. I have pushed them to the Alert Center.";
-      } else if (lowerInput.includes('lapse') || lowerInput.includes('forecast')) {
-        botResponse = "My Linear Regression model predicts 45.2 Crores will lapse nationally by year-end if disbursement velocity doesn't improve by 15 percent.";
       } else if (lowerInput.includes('hello') || lowerInput.includes('hi')) {
         botResponse = "Hello! How can I assist you with project monitoring today?";
       }
