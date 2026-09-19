@@ -1,15 +1,25 @@
 // Supabase Data Store for Backend Routes
-require('dotenv').config({ path: '.env.local' });
-const { createClient } = require('@supabase/supabase-js');
+// Lazy-initialized: createClient only called at first use, not at module load.
 
-const SUPABASE_URL = process.env.SUPABASE_URL;
-const SUPABASE_KEY = process.env.SUPABASE_KEY;
+let _supabase = null;
 
-if (!SUPABASE_URL || !SUPABASE_KEY) {
-  console.error('[Supabase] Missing SUPABASE_URL or SUPABASE_KEY in .env.local');
+function getClient() {
+  if (_supabase) return _supabase;
+  const url = process.env.SUPABASE_URL;
+  const key = process.env.SUPABASE_KEY || process.env.SUPABASE_ANON_KEY;
+  if (!url || !key) {
+    console.warn('[supabaseDb] No credentials — MP queries will return empty.');
+    _supabase = {
+      from: () => ({
+        select: () => ({ ilike: () => ({ or: () => ({ range: () => ({ order: () => Promise.resolve({ data: [], error: null }) }) }) }), eq: () => ({ single: () => Promise.resolve({ data: null, error: 'no client' }) }), or: () => ({ range: () => ({ order: () => Promise.resolve({ data: [], error: null }) }) }) }),
+      }),
+    };
+    return _supabase;
+  }
+  const { createClient } = require('@supabase/supabase-js');
+  _supabase = createClient(url, key);
+  return _supabase;
 }
-
-const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 function normalizeRow(row) {
   return {
@@ -32,48 +42,52 @@ function normalizeRow(row) {
 }
 
 async function getAllMps({ state, type, search, limit = 100, offset = 0 } = {}) {
-  let query = supabase.from('mps').select('*');
-  if (state) query = query.ilike('state', state);
-  if (type) query = query.ilike('house', type);
-  if (search) query = query.or(`mp_name.ilike.%${search}%,constituency.ilike.%${search}%`);
-
-  query = query.range(offset, offset + limit - 1).order('mp_name', { ascending: true });
-  const { data, error } = await query;
-  if (error) {
-    console.error('Supabase query error:', error);
-    return [];
-  }
-  return data.map(normalizeRow);
+  try {
+    const supabase = getClient();
+    let query = supabase.from('mps').select('*');
+    if (state) query = query.ilike('state', state);
+    if (type) query = query.ilike('house', type);
+    if (search) query = query.or(`mp_name.ilike.%${search}%,constituency.ilike.%${search}%`);
+    query = query.range(offset, offset + limit - 1).order('mp_name', { ascending: true });
+    const { data, error } = await query;
+    if (error) { console.error('Supabase query error:', error); return []; }
+    return data.map(normalizeRow);
+  } catch (e) { console.error('getAllMps error:', e.message); return []; }
 }
 
 async function getMpById(id) {
-  const { data, error } = await supabase.from('mps').select('*').eq('id', id).single();
-  if (error || !data) {
-    console.error('Supabase getMpById error:', error);
-    return null;
-  }
-  return normalizeRow(data);
+  try {
+    const supabase = getClient();
+    const { data, error } = await supabase.from('mps').select('*').eq('id', id).single();
+    if (error || !data) return null;
+    return normalizeRow(data);
+  } catch (e) { return null; }
 }
 
 async function getMpStats() {
-  const { data, error } = await supabase.from('mps').select('house, allocated_amount, total_expenditure');
-  if (error) return [];
-  const stats = data.reduce((acc, row) => {
-    const type = row.house || 'Unknown';
-    if (!acc[type]) acc[type] = { type, count: 0, total_funds: 0, used_funds: 0 };
-    acc[type].count += 1;
-    acc[type].total_funds += Number(row.allocated_amount) || 0;
-    acc[type].used_funds += Number(row.total_expenditure) || 0;
-    return acc;
-  }, {});
-  return Object.values(stats).map(s => ({ ...s, avg_funds: s.count > 0 ? (s.total_funds / s.count) : 0 }));
+  try {
+    const supabase = getClient();
+    const { data, error } = await supabase.from('mps').select('house, allocated_amount, total_expenditure');
+    if (error) return [];
+    const stats = data.reduce((acc, row) => {
+      const type = row.house || 'Unknown';
+      if (!acc[type]) acc[type] = { type, count: 0, total_funds: 0, used_funds: 0 };
+      acc[type].count += 1;
+      acc[type].total_funds += Number(row.allocated_amount) || 0;
+      acc[type].used_funds += Number(row.total_expenditure) || 0;
+      return acc;
+    }, {});
+    return Object.values(stats).map(s => ({ ...s, avg_funds: s.count > 0 ? (s.total_funds / s.count) : 0 }));
+  } catch (e) { return []; }
 }
 
 async function getStates() {
-  const { data, error } = await supabase.from('mps').select('state');
-  if (error) return [];
-  const states = [...new Set(data.map(r => r.state).filter(Boolean))];
-  return states.sort();
+  try {
+    const supabase = getClient();
+    const { data, error } = await supabase.from('mps').select('state');
+    if (error) return [];
+    return [...new Set(data.map(r => r.state).filter(Boolean))].sort();
+  } catch (e) { return []; }
 }
 
-module.exports = { getAllMps, getMpById, getMpStats, getStates, supabase };
+module.exports = { getAllMps, getMpById, getMpStats, getStates };
