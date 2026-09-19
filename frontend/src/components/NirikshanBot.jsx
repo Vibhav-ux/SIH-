@@ -183,28 +183,40 @@ export default function NirikshanBot() {
             </div>
           ))}
         </div>
-        {/* Suggestion Chips — shown only before first message */}
-        {chatHistory.length === 0 && (
-          <div className="px-3 pb-2 flex flex-wrap gap-1.5">
+
+        {/* Suggestion Chips — always visible above input */}
+        <div style={{ overflowX: 'auto', whiteSpace: 'nowrap', padding: '0 10px 8px', scrollbarWidth: 'none' }}>
+          <div style={{ display: 'inline-flex', gap: 6 }}>
             {[
-              '🚨 Show high risk projects',
-              '💰 Which MP has lowest fund utilization?',
-              '🔍 Any stalled projects?',
-              '🏗️ Top performing agencies?',
-              '🕸️ Show nexus alerts',
-              '📊 Overall fund summary',
+              '🚨 High risk projects',
+              '💰 Lowest fund utilization MP',
+              '🔍 Stalled projects',
+              '🏗️ Top agencies',
+              '🕸️ Nexus alerts',
+              '📊 Fund summary',
+              '⚡ Lapse risk funds',
+              '🏛️ Most active MPs',
             ].map(q => (
               <button
                 key={q}
                 type="button"
                 onClick={() => processQuery(q)}
-                className="text-xs px-2.5 py-1 rounded-full border border-orange-500/30 bg-orange-500/10 text-orange-300 hover:bg-orange-500/25 hover:border-orange-500/60 transition-all cursor-pointer whitespace-nowrap"
+                style={{
+                  fontSize: 11, padding: '4px 10px', borderRadius: 20,
+                  border: '1px solid rgba(249,115,22,0.4)',
+                  background: 'rgba(249,115,22,0.12)',
+                  color: '#fdba74', cursor: 'pointer', whiteSpace: 'nowrap',
+                  transition: 'all 0.15s',
+                  flexShrink: 0,
+                }}
+                onMouseEnter={e => { e.target.style.background = 'rgba(249,115,22,0.28)'; e.target.style.borderColor = 'rgba(249,115,22,0.7)'; }}
+                onMouseLeave={e => { e.target.style.background = 'rgba(249,115,22,0.12)'; e.target.style.borderColor = 'rgba(249,115,22,0.4)'; }}
               >
                 {q}
               </button>
             ))}
           </div>
-        )}
+        </div>
 
         {/* Input Area */}
         <form onSubmit={handleSubmit} className="p-3 border-t border-slate-700/50 bg-slate-900/50">
