@@ -1,0 +1,5 @@
+[deploy]
+startCommand = "cd backend && node src/server.js"
+
+[build]
+buildCommand = "cd backend && npm install"
