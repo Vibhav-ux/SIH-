@@ -379,7 +379,7 @@ export default function LoginPage() {
               )}
               {showDropdown && mps.length > 0 && !selectedMp && (
                 <div style={{
-                  position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 100,
+                  position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 200,
                   background: '#0d1628', border: '1px solid rgba(255,153,51,0.2)',
                   borderRadius: '12px', maxHeight: '240px', overflowY: 'auto', marginTop: '4px',
                   backdropFilter: 'blur(16px)',
@@ -443,6 +443,7 @@ export default function LoginPage() {
           onClick={handleLogin}
           disabled={!selectedRole || (selectedRole === 'mp' && !selectedMp) || (selectedRole === 'ministry' && !ministryAuthed)}
           style={{
+            position: 'relative', zIndex: 1,
             width: '100%', padding: '1rem', borderRadius: '14px',
             background: selectedRole
               ? `linear-gradient(135deg, ${ROLES.find(r => r.id === selectedRole)?.color}, ${ROLES.find(r => r.id === selectedRole)?.color}bb)`
