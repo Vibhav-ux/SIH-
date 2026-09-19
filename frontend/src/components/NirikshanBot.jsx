@@ -8,6 +8,14 @@ export default function NirikshanBot() {
   const [isListening, setIsListening] = useState(false);
   const location = useLocation();
   const recognitionRef = useRef(null);
+  const chatBodyRef = useRef(null);
+
+  // Auto-scroll to bottom when new messages arrive
+  useEffect(() => {
+    if (chatBodyRef.current) {
+      chatBodyRef.current.scrollTop = chatBodyRef.current.scrollHeight;
+    }
+  }, [chatHistory]);
 
   // Initialize Speech Recognition
   useEffect(() => {
@@ -151,7 +159,13 @@ export default function NirikshanBot() {
         </div>
         
         {/* Chat Body */}
-        <div className="p-4 h-56 overflow-y-auto flex flex-col space-y-3">
+        <div className="p-4 h-56 overflow-y-auto flex flex-col space-y-3" ref={chatBodyRef}>
+          {chatHistory.length === 0 && (
+            <div className="flex flex-col items-center justify-center h-full gap-3">
+              <div className="text-2xl">🤖</div>
+              <p className="text-slate-400 text-xs text-center">Hi! I'm Nirikshan AI.<br/>Ask me anything about MPLAD funds.</p>
+            </div>
+          )}
           {chatHistory.map((msg, idx) => (
             <div key={idx} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start space-x-2'}`}>
               {msg.sender === 'bot' && (
@@ -169,6 +183,28 @@ export default function NirikshanBot() {
             </div>
           ))}
         </div>
+        {/* Suggestion Chips — shown only before first message */}
+        {chatHistory.length === 0 && (
+          <div className="px-3 pb-2 flex flex-wrap gap-1.5">
+            {[
+              '🚨 Show high risk projects',
+              '💰 Which MP has lowest fund utilization?',
+              '🔍 Any stalled projects?',
+              '🏗️ Top performing agencies?',
+              '🕸️ Show nexus alerts',
+              '📊 Overall fund summary',
+            ].map(q => (
+              <button
+                key={q}
+                type="button"
+                onClick={() => processQuery(q)}
+                className="text-xs px-2.5 py-1 rounded-full border border-orange-500/30 bg-orange-500/10 text-orange-300 hover:bg-orange-500/25 hover:border-orange-500/60 transition-all cursor-pointer whitespace-nowrap"
+              >
+                {q}
+              </button>
+            ))}
+          </div>
+        )}
 
         {/* Input Area */}
         <form onSubmit={handleSubmit} className="p-3 border-t border-slate-700/50 bg-slate-900/50">
