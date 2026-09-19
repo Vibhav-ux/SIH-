@@ -1,6 +1,6 @@
 // Force HMR
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { useState, useEffect } from 'react';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { useState, useEffect, useCallback } from 'react';
 import Navbar from './components/Navbar';
 import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/LoginPage';
@@ -39,14 +39,19 @@ export default function App() {
   const [role, setRole] = useState(() => localStorage.getItem('mplad_role') || 'citizen');
   const [activeId, setActiveId] = useState(() => localStorage.getItem('mplad_mp_id') || 'mp-001');
 
-  // Keep localStorage in sync with state
-  useEffect(() => {
-    localStorage.setItem('mplad_role', role);
-  }, [role]);
+  // Re-read localStorage whenever it changes (handles post-login navigation without refresh)
+  const syncFromStorage = useCallback(() => {
+    const newRole = localStorage.getItem('mplad_role') || 'citizen';
+    const newId   = localStorage.getItem('mplad_mp_id') || 'mp-001';
+    setRole(r  => r  !== newRole ? newRole : r);
+    setActiveId(id => id !== newId   ? newId   : id);
+  }, []);
 
+  // Sync on cross-tab storage events
   useEffect(() => {
-    localStorage.setItem('mplad_mp_id', activeId);
-  }, [activeId]);
+    window.addEventListener('storage', syncFromStorage);
+    return () => window.removeEventListener('storage', syncFromStorage);
+  }, [syncFromStorage]);
 
   const handleRoleChange = (newRole) => {
     setRole(newRole);
@@ -58,8 +63,16 @@ export default function App() {
     localStorage.setItem('mplad_mp_id', newId);
   };
 
+  // Inner component — must be inside BrowserRouter to use useLocation
+  function LocationSync() {
+    const location = useLocation();
+    useEffect(() => { syncFromStorage(); }, [location.pathname]);
+    return null;
+  }
+
   return (
     <BrowserRouter>
+      <LocationSync />
       <Routes>
         {/* Landing page at root */}
         <Route path="/" element={<LandingPage />} />
