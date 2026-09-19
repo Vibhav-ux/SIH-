@@ -2,6 +2,9 @@ import { useEffect, useState } from 'react';
 import { agencyApi } from '../api';
 
 export default function AgencyTrustRegistry() {
+  const role = localStorage.getItem('mplad_role') || 'citizen';
+  const myAgencyId = (role === 'agency') ? localStorage.getItem('mplad_mp_id') : null;
+
   const [agencies, setAgencies] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -123,11 +126,16 @@ export default function AgencyTrustRegistry() {
                       ))}
                     </tr>
                   ))
-                  : filtered.map((a, i) => (
-                    <tr key={a.id} style={{ cursor: 'pointer' }} onClick={() => setSelected(a)}>
+                  : filtered.map((a, i) => {
+                    const isOwn = myAgencyId ? a.id === myAgencyId : true;
+                    const canSeeDetails = !myAgencyId || isOwn; // agencies only see own details
+                    return (
+                    <tr key={a.id} style={{ cursor: 'pointer', background: isOwn && myAgencyId ? 'rgba(99,102,241,0.05)' : undefined }} onClick={() => canSeeDetails && setSelected(a)}>
                       <td style={{ color: '#64748b', fontSize: 13, fontWeight: 700 }}>#{i + 1}</td>
                       <td>
-                        <div style={{ fontWeight: 600, color: '#0f172a', fontSize: 13 }}>{a.name}</div>
+                        <div style={{ fontWeight: 600, color: '#0f172a', fontSize: 13 }}>
+                          {a.name} {isOwn && myAgencyId && <span style={{ fontSize: 10, background: '#eef2ff', color: '#4f46e5', padding: '1px 6px', borderRadius: 4, fontWeight: 700 }}>YOU</span>}
+                        </div>
                         <div style={{ fontSize: 11, color: '#64748b' }}>{a.state} · {a.category}</div>
                       </td>
                       <td>
@@ -138,19 +146,18 @@ export default function AgencyTrustRegistry() {
                           <span style={{ fontWeight: 700, color: scoreColor(a.trustScore), fontSize: 13 }}>{a.trustScore}</span>
                         </div>
                       </td>
-                      <td style={{ color: '#10b981', fontWeight: 600 }}>{a.completionRate}%</td>
-                      <td style={{ color: a.avgDelayDays > 60 ? '#f43f5e' : a.avgDelayDays > 30 ? '#f59e0b' : '#10b981', fontWeight: 600 }}>
-                        {a.avgDelayDays}d
+                      <td style={{ color: '#10b981', fontWeight: 600 }}>{canSeeDetails ? `${a.completionRate}%` : '—'}</td>
+                      <td style={{ color: canSeeDetails ? (a.avgDelayDays > 60 ? '#f43f5e' : a.avgDelayDays > 30 ? '#f59e0b' : '#10b981') : '#94a3b8', fontWeight: 600 }}>
+                        {canSeeDetails ? `${a.avgDelayDays}d` : '—'}
                       </td>
                       <td>
-                        <span style={{
-                          fontWeight: 700, fontSize: 14,
-                          color: a.fraudFlags >= 3 ? '#f43f5e' : a.fraudFlags >= 1 ? '#f59e0b' : '#10b981',
-                        }}>
-                          {a.fraudFlags} {a.fraudFlags >= 3 ? '🚨' : a.fraudFlags >= 1 ? '⚠️' : ''}
-                        </span>
+                        {canSeeDetails ? (
+                          <span style={{ fontWeight: 700, fontSize: 14, color: a.fraudFlags >= 3 ? '#f43f5e' : a.fraudFlags >= 1 ? '#f59e0b' : '#10b981' }}>
+                            {a.fraudFlags} {a.fraudFlags >= 3 ? '🚨' : a.fraudFlags >= 1 ? '⚠️' : ''}
+                          </span>
+                        ) : <span style={{ fontSize: 11, color: '#94a3b8' }}>🔒 Restricted</span>}
                       </td>
-                      <td style={{ color: 'var(--text-secondary)' }}>{a.mpCount}</td>
+                      <td style={{ color: 'var(--text-secondary)' }}>{canSeeDetails ? a.mpCount : '—'}</td>
                       <td>
                         <span className={`badge badge-${a.riskLevel === 'LOW_RISK' ? 'low' : a.riskLevel === 'MEDIUM_RISK' ? 'medium' : 'high'}`}>
                           {a.riskLevel?.replace(/_/g, ' ')}
@@ -160,7 +167,8 @@ export default function AgencyTrustRegistry() {
                         {a.shellAlert ? <span style={{ color: '#f43f5e', fontWeight: 700 }}>🔴 YES</span> : <span style={{ color: '#64748b' }}>—</span>}
                       </td>
                     </tr>
-                  ))}
+                   ); })}
+
               </tbody>
             </table>
           </div>

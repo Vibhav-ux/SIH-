@@ -21,6 +21,26 @@ const TEMPLATES = {
 };
 const AGENCY_IDS = ['ag-001','ag-002','ag-003','ag-004','ag-005','ag-006','ag-007','ag-008','ag-009','ag-010','ag-011','ag-012','ag-013','ag-014','ag-015'];
 
+// ─── Nexus "favorite" pairs: specific MPs who disproportionately use the same agency ──
+// This gives NexusDetector real signal to find (not manufactured from noise).
+const NEXUS_FAVORITES = {
+  'LS-001': 'ag-003', 'LS-002': 'ag-003', 'LS-003': 'ag-003', // Kanpur UP cluster — same corrupt agency
+  'LS-004': 'ag-011', 'LS-005': 'ag-011',                      // Shell company cluster
+  'LS-010': 'ag-001', 'LS-011': 'ag-001', 'LS-012': 'ag-001', // Shree Ram Constructions cluster
+  'RS-001': 'ag-008', 'RS-002': 'ag-008',                      // Andhra cluster
+};
+// "Hub" agencies that appear more often than others (skewed distribution)
+const HUB_AGENCIES = ['ag-001','ag-003','ag-008','ag-011'];
+function pickAgency(mpId, projectIndex) {
+  const fav = NEXUS_FAVORITES[mpId];
+  // Nexus MPs: 65% chance of using their favorite agency
+  if (fav && seededRand() < 0.65) return fav;
+  // Hub agencies get 3x weight
+  const pool = [];
+  AGENCY_IDS.forEach(a => { pool.push(a); if (HUB_AGENCIES.includes(a)) { pool.push(a); pool.push(a); } });
+  return pool[Math.abs(_seed >> 6) % pool.length];
+}
+
 const STATE_COORDS = {
   'Andhra Pradesh':{ lat: 15.9129, lng: 79.74 },'Arunachal Pradesh':{ lat: 28.218, lng: 94.7278 },
   'Assam':{ lat: 26.2006, lng: 92.9376 },'Bihar':{ lat: 25.0961, lng: 85.3131 },
@@ -69,7 +89,6 @@ function parseCSV(filePath) {
   });
 }
 
-let agIdx = 0;
 function generateForMp(id, state, constituency, lat, lng, totalFunds) {
   const projects = [];
   const proposals = [];
@@ -95,7 +114,7 @@ function generateForMp(id, state, constituency, lat, lng, totalFunds) {
     projects.push({
       id: `pr-${id}-${i}`,
       mpId: id,
-      agencyId: AGENCY_IDS[agIdx++ % AGENCY_IDS.length],
+      agencyId: pickAgency(id, i),
       title: `${template} - ${constituency}`,
       category: cat,
       state,
