@@ -107,7 +107,9 @@ function generateForMp(id, state, constituency, lat, lng, totalFunds) {
     const monthStart = 1 + Math.abs(_seed >> 14) % 9;
     const startDate = `202${2 + Math.abs(_seed >> 16) % 3}-${String(monthStart).padStart(2,'0')}-01`;
     const endDate = addDays(startDate, 180 + Math.abs(_seed >> 18) % 550);
-    const riskScore = status === 'STALLED' ? 55 + Math.abs(_seed >> 20) % 37 : status === 'COMPLETED' ? 3 + Math.abs(_seed >> 20) % 20 : 15 + Math.abs(_seed >> 20) % 53;
+    const riskScore = status === 'STALLED' ? 60 + Math.abs(_seed >> 20) % 40
+      : status === 'COMPLETED' ? 3 + Math.abs(_seed >> 20) % 18
+      : 10 + Math.abs(_seed >> 20) % 80;
     const latOff = ((Math.abs(_seed >> 22) % 40) - 20) / 100;
     const lngOff = ((Math.abs(_seed >> 24) % 40) - 20) / 100;
 
@@ -128,17 +130,19 @@ function generateForMp(id, state, constituency, lat, lng, totalFunds) {
       startDate,
       endDate,
       riskScore,
-      lapseRisk: status === 'STALLED' && riskScore > 65,
+      lapseRisk: (status === 'STALLED' && riskScore >= 60) || (status === 'IN_PROGRESS' && riskScore >= 72),
       duplicateFlag: false,
       description: `${template} for ${constituency} constituency.`,
     });
   }
 
-  const propStatuses = ['PENDING', 'APPROVED'];
+  // Varied proposal statuses — weighted random so counts differ realistically
+  // ~40% PENDING, ~35% APPROVED, ~25% REJECTED
+  const PROP_STATUS_POOL = ['PENDING','PENDING','PENDING','PENDING','APPROVED','APPROVED','APPROVED','REJECTED','REJECTED'];
   for (let i = 0; i < 2; i++) {
     _seed = _seed ^ ((id.charCodeAt(0) || 65) * (i + 100) * 6571);
     const cat = CATEGORIES[Math.abs(_seed) % CATEGORIES.length];
-    const status = propStatuses[i];
+    const pStatus = PROP_STATUS_POOL[Math.abs(_seed >> 2) % PROP_STATUS_POOL.length];
     proposals.push({
       id: `prop-${id}-${i}`,
       mpId: id,
@@ -148,9 +152,13 @@ function generateForMp(id, state, constituency, lat, lng, totalFunds) {
       description: `Proposed ${cat.toLowerCase()} development for ${constituency}.`,
       lat: parseFloat((lat + ((Math.abs(_seed >> 8) % 10) - 5) / 100).toFixed(4)),
       lng: parseFloat((lng + ((Math.abs(_seed >> 10) % 10) - 5) / 100).toFixed(4)),
-      status,
+      status: pStatus,
       submittedAt: new Date(Date.now() - (30 + Math.abs(_seed >> 12) % 150) * 86400000).toISOString(),
-      ministerRemarks: status === 'PENDING' ? null : 'Approved by oversight committee. Proceed with work order.',
+      ministerRemarks: pStatus === 'PENDING' ? null
+        : pStatus === 'APPROVED' ? 'Approved by oversight committee. Proceed with work order.'
+        : 'Budget allocation concerns. Requires revision and resubmission.',
+      approvedAt: pStatus === 'APPROVED' ? new Date(Date.now() - Math.abs(_seed >> 14) % 30 * 86400000).toISOString() : null,
+      rejectedAt: pStatus === 'REJECTED' ? new Date(Date.now() - Math.abs(_seed >> 14) % 20 * 86400000).toISOString() : null,
     });
   }
   return { projects, proposals };

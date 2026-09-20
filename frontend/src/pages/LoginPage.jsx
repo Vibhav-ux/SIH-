@@ -526,7 +526,7 @@ export default function LoginPage() {
         </button>
 
         <p style={{ textAlign: 'center', color: '#334155', fontSize: '0.75rem', marginTop: '1.25rem' }}>
-          Nirikshan AI | 17th Lok Sabha + Rajya Sabha | 774 MPs | SIH 2026 Demo
+          Nirikshan AI | 17th Lok Sabha + Rajya Sabha | 776 MPs | SIH 2026 Demo
         </p>
       </div>
 

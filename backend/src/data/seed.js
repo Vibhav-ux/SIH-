@@ -107,6 +107,21 @@ function seedAll() {
   ];
   communityReports.forEach(r => seedRaw('communityReports', r.id, r));
 
+  // ─── Seeded FRAUD complaints (so fraudAlerts stat > 0) ─────────────────────
+  const complaints = [
+    { id:'cmp-001', projectId:'pr-LS-001-0', category:'FRAUD',  status:'OPEN',     description:'Contractor submitting inflated bills — actual material cost 40% lower.', reporterName:'Mahesh Tiwari',   state:'Uttar Pradesh', createdAt:'2025-03-10T09:00:00.000Z' },
+    { id:'cmp-002', projectId:'pr-LS-002-2', category:'FRAUD',  status:'OPEN',     description:'Funds disbursed for work not yet commenced on ground.', reporterName:'Kavitha Nair',     state:'Kerala',        createdAt:'2025-03-14T11:00:00.000Z' },
+    { id:'cmp-003', projectId:'pr-LS-003-1', category:'FRAUD',  status:'OPEN',     description:'Same contractor awarded under different company name — shell entity suspected.', reporterName:'Rakesh Yadav',     state:'Bihar',         createdAt:'2025-04-01T08:30:00.000Z' },
+    { id:'cmp-004', projectId:'pr-LS-004-0', category:'FRAUD',  status:'OPEN',     description:'GPS location of project differs from actual site — ghost project suspected.', reporterName:'Anjali Sharma',   state:'Rajasthan',     createdAt:'2025-04-05T13:00:00.000Z' },
+    { id:'cmp-005', projectId:'pr-LS-010-3', category:'FRAUD',  status:'OPEN',     description:'Double funding detected — same road work sanctioned under PMGSY also.', reporterName:'Sudhir Kulkarni', state:'Maharashtra',   createdAt:'2025-04-12T10:00:00.000Z' },
+    { id:'cmp-006', projectId:'pr-LS-011-2', category:'FRAUD',  status:'RESOLVED', description:'Material substandard — tiles cracked within 2 months of completion.', reporterName:'Prem Bahadur',    state:'Uttarakhand',   createdAt:'2025-04-18T09:00:00.000Z' },
+    { id:'cmp-007', projectId:'pr-LS-012-1', category:'FRAUD',  status:'OPEN',     description:'Progress report shows 80% completion but site is at 20%.', reporterName:'Geeta Mishra',    state:'Madhya Pradesh',createdAt:'2025-05-02T14:00:00.000Z' },
+    { id:'cmp-008', projectId:'pr-LS-005-0', category:'DELAY',  status:'OPEN',     description:'Project delayed by 18 months — contractor unresponsive.', reporterName:'Arjun Reddy',     state:'Telangana',     createdAt:'2025-05-08T10:00:00.000Z' },
+    { id:'cmp-009', projectId:'pr-LS-006-2', category:'QUALITY',status:'OPEN',     description:'Road constructed without proper base layer — already developing potholes.', reporterName:'Fatima Sheikh',   state:'West Bengal',   createdAt:'2025-05-15T11:00:00.000Z' },
+    { id:'cmp-010', projectId:'pr-RS-001-0', category:'FRAUD',  status:'OPEN',     description:'Overhead tank construction funds utilized but no tank built.', reporterName:'Balram Singh',    state:'Uttar Pradesh', createdAt:'2025-06-01T09:00:00.000Z' },
+  ];
+  complaints.forEach(c => seedRaw('complaints', c.id, c));
+
   const externalSchemes = [
     { id:'ext-001', scheme:'PMGSY', title:'Village Road — Dholka to Bavla Connectivity', lat:22.72, lng:72.46, budget:3200000, startDate:'2023-10-01', endDate:'2025-03-31', state:'Gujarat',      contractor:'Rapid Build Infrastructure' },
     { id:'ext-002', scheme:'AMRUT', title:'Flood Protection Embankment — Dharmatala',     lat:22.56, lng:88.35, budget:2000000, startDate:'2024-01-01', endDate:'2025-05-31', state:'West Bengal', contractor:'Bengal Municipal Works' },

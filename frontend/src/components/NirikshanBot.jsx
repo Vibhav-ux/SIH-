@@ -87,7 +87,7 @@ export default function NirikshanBot() {
     } else if (path.includes('/app/nexus')) {
       return "Nexus Graph online. I have traversed the relationships and identified a suspicious clustering pattern where 85% of contracts in District 4 were awarded to a single holding company. Investigate node?";
     } else {
-      return "Greetings from Nirikshan AI! I am your intelligent assistant. I continuously monitor 774 MPs and thousands of projects in real-time. How can I assist your oversight today?";
+      return "Greetings from Nirikshan AI! I am your intelligent assistant. I continuously monitor 776 MPs and thousands of projects in real-time. How can I assist your oversight today?";
     }
   };
 
@@ -123,7 +123,7 @@ export default function NirikshanBot() {
       } else if (lowerInput.includes('nexus alerts') || lowerInput.includes('🕸️')) {
         botResponse = "Nexus Graph online. I have identified a suspicious clustering pattern where 65% of contracts for LS-001, LS-002, and LS-003 in UP were awarded to a single agency: Vishal Projects Limited.";
       } else if (lowerInput.includes('fund summary') || lowerInput.includes('📊')) {
-        botResponse = "National MPLAD Fund Summary: Total Allocated across 774 MPs is ₹1,935 Crores. Currently, ₹1,240 Crores (64%) have been utilized. There is an active payment gap of 8% awaiting clearance.";
+        botResponse = "National MPLAD Fund Summary: Total Allocated across 776 MPs is ₹1,940 Crores. Currently, ₹1,245 Crores (64%) have been utilized. There is an active payment gap of 8% awaiting clearance.";
       } else if (lowerInput.includes('lapse risk') || lowerInput.includes('⚡')) {
         botResponse = "My Linear Regression model predicts ₹45.2 Crores will lapse nationally by year-end if disbursement velocity doesn't improve. I have highlighted the affected projects in orange.";
       } else if (lowerInput.includes('most active') || lowerInput.includes('🏛️')) {
