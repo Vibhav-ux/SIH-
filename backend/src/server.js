@@ -88,8 +88,34 @@ startup().then(() => {
     console.log(`📊 Health check: http://localhost:${PORT}/api/health`);
     console.log(`👥 Real MPs: http://localhost:${PORT}/api/mp/all`);
     console.log(`🔗 Audit Ledger: http://localhost:${PORT}/api/audit/ledger\n`);
+
+    // ─── Keep-Alive Self-Ping (prevents Render free-tier cold start) ──────────
+    // Render spins down after 15 min of inactivity. We ping ourselves every 8 min.
+    const PING_URL = process.env.RENDER_EXTERNAL_URL
+      ? `${process.env.RENDER_EXTERNAL_URL}/api/health`
+      : null;
+
+    if (PING_URL) {
+      const https = require('https');
+      const http  = require('http');
+      const client = PING_URL.startsWith('https') ? https : http;
+
+      setInterval(() => {
+        client.get(PING_URL, (res) => {
+          console.log(`[KeepAlive] ♻️  Self-ping → ${res.statusCode} (${new Date().toISOString()})`);
+        }).on('error', (err) => {
+          console.warn(`[KeepAlive] ⚠️  Ping failed: ${err.message}`);
+        });
+      }, 8 * 60 * 1000); // every 8 minutes
+
+      console.log(`[KeepAlive] ✅ Self-ping active → ${PING_URL} (every 8 min)`);
+    } else {
+      console.log('[KeepAlive] ℹ️  RENDER_EXTERNAL_URL not set — self-ping skipped (local dev)');
+    }
+    // ─────────────────────────────────────────────────────────────────────────
   });
 });
+
 
 module.exports = app;
 
