@@ -123,9 +123,9 @@ export default function AgencyDashboard({ agencyId = 'ag-001' }) {
                   { label: 'States', value: agency.stateCount || 0 },
                   { label: 'Fraud Flags', value: agency.fraudFlags || 0 },
                 ].map(m => (
-                  <div key={m.label} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 12px', background: 'var(--text-primary)', borderRadius: 8 }}>
+                  <div key={m.label} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 12px', background: '#f1f5f9', borderRadius: 8, border: '1px solid #e2e8f0' }}>
                     <span style={{ fontSize: 12, color: '#64748b' }}>{m.label}</span>
-                    <span style={{ fontSize: 13, fontWeight: 700, color: m.label === 'Fraud Flags' && m.value > 0 ? '#f43f5e' : 'var(--text-primary)' }}>{m.value}</span>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: m.label === 'Fraud Flags' && m.value > 0 ? '#dc2626' : '#0f172a' }}>{m.value}</span>
                   </div>
                 ))}
               </div>
@@ -142,9 +142,9 @@ export default function AgencyDashboard({ agencyId = 'ag-001' }) {
               { label: 'GSTIN', value: agency.gstIn },
               { label: 'Category', value: agency.category },
             ].map(d => (
-              <div key={d.label} style={{ padding: '10px 14px', background: 'var(--text-primary)', borderRadius: 10 }}>
+              <div key={d.label} style={{ padding: '10px 14px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 10 }}>
                 <div style={{ fontSize: 11, color: '#64748b', marginBottom: 4 }}>{d.label}</div>
-                <div style={{ fontSize: 13, color: '#0f172a' }}>{d.value}</div>
+                <div style={{ fontSize: 13, color: '#0f172a', fontWeight: 500 }}>{d.value}</div>
               </div>
             ))}
           </div>
