@@ -413,10 +413,10 @@ export default function LoginPage() {
               )}
               {showDropdown && mps.length > 0 && !selectedMp && (
                 <div style={{
-                  position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 999,
+                  position: 'absolute', bottom: '110%', left: 0, right: 0, zIndex: 999,
                   background: '#ffffff', border: '1px solid #e2e8f0',
-                  borderRadius: '12px', maxHeight: '220px', overflowY: 'auto', marginTop: '6px',
-                  boxShadow: '0 8px 32px rgba(0,0,0,0.15)',
+                  borderRadius: '12px', maxHeight: '220px', overflowY: 'auto', marginBottom: '4px',
+                  boxShadow: '0 -8px 32px rgba(0,0,0,0.12)',
                 }}>
                   {mps.map(mp => (
                     <div
