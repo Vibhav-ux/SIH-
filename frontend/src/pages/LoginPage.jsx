@@ -251,6 +251,18 @@ export default function LoginPage() {
   const [showDropdown, setShowDropdown] = useState(false);
   const [selectedAgency, setSelectedAgency] = useState(null);
   const searchTimer = useRef(null);
+  const dropdownRef = useRef(null);
+
+  // Close dropdown when clicking outside the search box
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setShowDropdown(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const AGENCIES = [
     { id: 'ag-001', name: 'Shree Ram Constructions Pvt Ltd', state: 'Uttar Pradesh' },
@@ -381,7 +393,7 @@ export default function LoginPage() {
             <h3 style={{ color: 'var(--text-primary)', margin: '0 0 1rem', fontSize: '0.95rem', fontWeight: 700 }}>
               🔍 Search Your Constituency
             </h3>
-            <div style={{ position: 'relative' }}>
+            <div style={{ position: 'relative' }} ref={dropdownRef}>
               <input
                 value={selectedMp ? `${selectedMp.name} — ${selectedMp.constituency}` : mpSearch}
                 onChange={handleSearchInput}
@@ -409,7 +421,7 @@ export default function LoginPage() {
                   {mps.map(mp => (
                     <div
                       key={mp.id}
-                      onClick={() => { setSelectedMp(mp); setShowDropdown(false); setMpSearch(''); }}
+                      onMouseDown={() => { setSelectedMp(mp); setShowDropdown(false); setMpSearch(''); }}
                       style={{
                         padding: '0.75rem 1rem', cursor: 'pointer',
                         borderBottom: '1px solid #f1f5f9',
