@@ -401,25 +401,24 @@ export default function LoginPage() {
               )}
               {showDropdown && mps.length > 0 && !selectedMp && (
                 <div style={{
-                  position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 200,
-                  background: '#0d1628', border: '1px solid rgba(255,153,51,0.2)',
-                  borderRadius: '12px', maxHeight: '240px', overflowY: 'auto', marginTop: '4px',
-                  backdropFilter: 'blur(16px)',
-                  boxShadow: '0 16px 48px rgba(0,0,0,0.6)',
+                  position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 999,
+                  background: '#ffffff', border: '1px solid #e2e8f0',
+                  borderRadius: '12px', maxHeight: '220px', overflowY: 'auto', marginTop: '6px',
+                  boxShadow: '0 8px 32px rgba(0,0,0,0.15)',
                 }}>
                   {mps.map(mp => (
                     <div
                       key={mp.id}
                       onClick={() => { setSelectedMp(mp); setShowDropdown(false); setMpSearch(''); }}
                       style={{
-                        padding: '0.8rem 1rem', cursor: 'pointer',
-                        borderBottom: '1px solid rgba(255,255,255,0.04)',
+                        padding: '0.75rem 1rem', cursor: 'pointer',
+                        borderBottom: '1px solid #f1f5f9',
                         transition: 'background 0.15s',
                       }}
-                      onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,153,51,0.1)'}
+                      onMouseEnter={e => e.currentTarget.style.background = '#fff7ed'}
                       onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                     >
-                      <div style={{ color: 'var(--text-primary)', fontWeight: 600, fontSize: '0.88rem' }}>{mp.name}</div>
+                      <div style={{ color: '#1e293b', fontWeight: 600, fontSize: '0.88rem' }}>{mp.name}</div>
                       <div style={{ color: '#64748b', fontSize: '0.76rem', marginTop: '2px' }}>
                         {mp.constituency} • {mp.state} • {mp.type}
                         {mp.totalFunds > 0 && ` • Allocated: ${formatCurrency(mp.totalFunds)}`}
